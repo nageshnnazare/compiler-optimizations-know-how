@@ -19,6 +19,7 @@
 :root {
     --header-height: 56px;
     --sidebar-width: 280px;
+    /* Let the document fill the available width (no wasted screen real-estate). */
     --content-max: none;
 
     --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -39,15 +40,21 @@
     --glass-tint: rgba(20,22,30,0.30);
     --glass-border: rgba(255,255,255,0.10);
     --glass-highlight: rgba(255,255,255,0.14);
-    --glass-sheen: rgba(255,255,255,0.07);
     --glass-shadow: 0 10px 30px rgba(0,0,0,0.45);
     --glass-blur: 22px;
-    /* Floating glass controls (dark) */
-    --ctrl-bg: rgba(255,255,255,0.07);
-    --ctrl-bg-hover: rgba(255,255,255,0.16);
-    --ctrl-border: rgba(255,255,255,0.16);
-    --ctrl-shadow: 0 2px 8px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.14);
-    --ctrl-shadow-hover: 0 6px 16px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.22);
+    /* Shared liquid-glass backdrop filter: moderate blur + saturation so the
+       page behind shows through (transparent), Apple-style, without a milky fill. */
+    --glass-filter: blur(18px) saturate(200%);
+    /* Floating glass controls (dark) -- transparent, the blur does the work. */
+    --ctrl-bg: rgba(255,255,255,0.04);
+    --ctrl-bg-hover: rgba(255,255,255,0.09);
+    --ctrl-border: rgba(255,255,255,0.12);
+    --ctrl-shadow: 0 4px 18px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.18);
+    --ctrl-shadow-hover: 0 8px 26px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.26);
+    /* Light-catching rim gradient: a single highlight on the top-left diagonal
+       edge that fades to nothing before reaching the opposite side -- the
+       asymmetric, Apple-style refractive glass edge. */
+    --glass-rim: linear-gradient(135deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 16%, rgba(255,255,255,0) 42%);
     --bg-sidebar: #0e1016;
     --bg-content: #0b0d12;
     --bg-code-block: #14161f;
@@ -96,6 +103,15 @@
     --nav-doc-active-bg: var(--accent);
     --nav-doc-active-fg: #0a0f17;
     --scrollbar-thumb: #2a2e40;
+
+    /* Diagram (```diagram) box accent palette */
+    --d-blue: #5aa2f0;
+    --d-green: #56c98a;
+    --d-orange: #e0a23c;
+    --d-red: #e8666f;
+    --d-purple: #b58cf0;
+    --d-teal: #45c4c4;
+    --d-gray: #9aa0b4;
 }
 
 [data-theme="light"] {
@@ -110,15 +126,18 @@
     --glass-tint: rgba(255,255,255,0.35);
     --glass-border: rgba(255,255,255,0.65);
     --glass-highlight: rgba(255,255,255,0.85);
-    --glass-sheen: rgba(255,255,255,0.55);
     --glass-shadow: 0 10px 30px rgba(16,24,40,0.12);
     --glass-blur: 22px;
-    /* Floating glass controls (light) */
-    --ctrl-bg: rgba(255,255,255,0.6);
-    --ctrl-bg-hover: rgba(255,255,255,0.92);
-    --ctrl-border: rgba(16,24,40,0.10);
-    --ctrl-shadow: 0 2px 8px rgba(16,24,40,0.12), inset 0 1px 0 rgba(255,255,255,0.85);
-    --ctrl-shadow-hover: 0 6px 16px rgba(16,24,40,0.18), inset 0 1px 0 rgba(255,255,255,0.95);
+    --glass-filter: blur(18px) saturate(190%);
+    /* Floating glass controls (light) -- transparent, the blur does the work. */
+    --ctrl-bg: rgba(255,255,255,0.35);
+    --ctrl-bg-hover: rgba(255,255,255,0.55);
+    --ctrl-border: rgba(255,255,255,0.6);
+    --ctrl-shadow: 0 4px 18px rgba(16,24,40,0.10), inset 0 1px 0 rgba(255,255,255,0.8);
+    --ctrl-shadow-hover: 0 8px 26px rgba(16,24,40,0.16), inset 0 1px 0 rgba(255,255,255,0.95);
+    /* Light-catching rim gradient: brightest at the top-left/bottom-right
+       corners, dimmer along the edges -- a refractive glass edge. */
+    --glass-rim: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.3) 16%, rgba(255,255,255,0) 42%);
     --bg-sidebar: #ffffff;
     --bg-content: #ffffff;
     --bg-code-block: #f4f5fa;
@@ -167,12 +186,34 @@
     --nav-doc-active-bg: var(--accent);
     --nav-doc-active-fg: #ffffff;
     --scrollbar-thumb: #d0d4e2;
+
+    /* Diagram (```diagram) box accent palette (darker for light bg contrast) */
+    --d-blue: #1f6fc4;
+    --d-green: #2f8f52;
+    --d-orange: #c1771f;
+    --d-red: #d23f4a;
+    --d-purple: #7d4fd0;
+    --d-teal: #1f8a8a;
+    --d-gray: #6a7187;
 }
 
 /* === Reset & base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { color-scheme: dark; scroll-behavior: smooth; }
+html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    /* Honour the device safe-area (notch / home indicator) on iOS. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Hide the browser's main page scrollbar (right + bottom) while keeping
+       the page fully scrollable. Per-component scrollbars (sidebars, code
+       blocks, tables) keep their own styled thin scrollbars. */
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* legacy Edge/IE */
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { width: 0; height: 0; display: none; }  /* WebKit/Blink */
 [data-theme="light"] { color-scheme: light; }
 
 body {
@@ -184,6 +225,8 @@ body {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     transition: background 0.25s, color 0.25s;
+    /* Never let wide code/tables push the whole page sideways on small screens. */
+    overflow-x: hidden;
 }
 
 ::selection { background: var(--accent-strong); }
@@ -237,29 +280,51 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 700;
-    font-size: 14px;
+    /* Keep this perfectly in sync with .doc-select so the title looks identical
+       whether it is shown in the picker or floating in the condensed navbar. */
+    font-weight: 600;
+    font-size: 13px;
     letter-spacing: -0.01em;
     color: var(--text-primary);
     background: var(--ctrl-bg);
     border: 1px solid var(--ctrl-border);
     box-shadow: var(--ctrl-shadow);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     padding: 7px 18px;
     border-radius: 999px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.28s ease, transform 0.28s ease;
+    transition: opacity 0.4s cubic-bezier(0.32,0.72,0,1), transform 0.4s cubic-bezier(0.32,0.72,0,1);
 }
 
 /* Smoothly fade/lift the menu items in and out as the bar condenses. */
 .brand-name, .doc-selector, .search-widget {
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.4s cubic-bezier(0.32,0.72,0,1), transform 0.4s cubic-bezier(0.32,0.72,0,1);
 }
 
-/* Condensed: keep the toggle icon, drop the collection name + menu items,
-   and reveal the centered document title. */
+/* Apple-style entrance for the navbar controls when the page first loads:
+   a soft fade with a gentle scale-up (no sliding). `backwards` keeps them
+   hidden during their delay but reverts to normal afterwards so the condense
+   transitions above keep working. */
+@keyframes nav-pop-in {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: none; }
+}
+.brand, .doc-selector, .search-widget {
+    animation: nav-pop-in 0.6s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+.brand         { animation-delay: 0.04s; }
+.doc-selector  { animation-delay: 0.10s; }
+.search-widget { animation-delay: 0.16s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .brand, .doc-selector, .search-widget { animation: none; }
+}
+
+/* Condensed: keep the sidebar toggle icon, drop the back button, collection
+   name + menu items, and reveal the centered document title. */
+body.nav-condensed .nav-back,
 body.nav-condensed .brand-name,
 body.nav-condensed .doc-selector,
 body.nav-condensed .search-widget {
@@ -303,6 +368,8 @@ body.nav-condensed .nav-doc-title {
     gap: 8px;
     min-width: 0;
     flex-shrink: 1;
+    /* Push the picker to the right so it sits alongside the navbar buttons. */
+    margin-left: auto;
 }
 
 .doc-selector-label {
@@ -323,13 +390,16 @@ body.nav-condensed .nav-doc-title {
     background: var(--ctrl-bg);
     border: 1px solid var(--ctrl-border);
     box-shadow: var(--ctrl-shadow);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
-    padding: 7px 30px 7px 14px;
+    /* Match the 36px height of the navbar icon buttons exactly. */
+    box-sizing: border-box;
+    height: 36px;
+    padding: 0 30px 0 14px;
     border-radius: 999px;
     outline: none;
     cursor: pointer;
@@ -338,7 +408,9 @@ body.nav-condensed .nav-doc-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: border-color 0.15s, background 0.2s, color 0.25s, box-shadow 0.2s, transform 0.15s;
+    /* Transition only background-color (not the `background` shorthand) so the
+       chevron icon never fades/slides on hover. Apple-style easing. */
+    transition: border-color 0.3s ease, background-color 0.3s cubic-bezier(0.32,0.72,0,1), color 0.25s ease, box-shadow 0.3s cubic-bezier(0.32,0.72,0,1), transform 0.3s cubic-bezier(0.32,0.72,0,1);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -346,66 +418,168 @@ body.nav-condensed .nav-doc-title {
 }
 
 .doc-select:hover {
-    background: var(--ctrl-bg-hover);
+    background-color: var(--ctrl-bg-hover);
     box-shadow: var(--ctrl-shadow-hover);
-    transform: translateY(-1px);
+    transform: scale(1.02);
 }
+.doc-select:active { transform: scale(0.98); }
 .doc-select:focus { border-color: var(--accent); }
 
 /* === Floating circular icon buttons (Apple-style) ===
    The title/sidebar toggle, theme toggle and search button share one identical
    look so every navbar icon matches. */
 .brand-toggle,
+.nav-back,
 .theme-toggle,
 .search-toggle,
-.toc-toggle {
+.toc-toggle,
+.doc-nav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    /* A 36px-tall pill: with no label it stays square (=> circle via the big
+       radius); on hover it grows to fit the text label. */
+    min-width: 36px;
     height: 36px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: 999px;
     background: var(--ctrl-bg);
     border: 1px solid var(--ctrl-border);
     box-shadow: var(--ctrl-shadow);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 16px;
     flex-shrink: 0;
-    transition: background 0.2s, color 0.15s, border-color 0.25s, box-shadow 0.2s, transform 0.15s;
+    position: relative;
+    /* Apple-style easing: gentle, no overshoot. */
+    transition: background 0.3s cubic-bezier(0.32,0.72,0,1), color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s cubic-bezier(0.32,0.72,0,1), transform 0.3s cubic-bezier(0.32,0.72,0,1), opacity 0.2s ease, padding 0.34s cubic-bezier(0.32,0.72,0,1);
 }
+/* Refractive liquid-glass rim: a bright, light-catching highlight that traces
+   the edges and corners of each button. Built as a gradient "border" using the
+   mask-compositing trick so only the 1px ring is painted. */
+.brand-toggle::after,
+.nav-back::after,
+.theme-toggle::after,
+.search-toggle::after,
+.toc-toggle::after,
+.doc-nav::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--glass-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.brand-toggle:hover::after,
+.nav-back:hover::after,
+.theme-toggle:hover::after,
+.search-toggle:hover::after,
+.toc-toggle:hover::after,
+.doc-nav:hover::after { opacity: 0.95; }
 .brand-toggle:hover,
+.nav-back:hover,
 .theme-toggle:hover,
 .search-toggle:hover,
-.toc-toggle:hover {
+.toc-toggle:hover,
+.doc-nav:hover {
     background: var(--ctrl-bg-hover);
     color: var(--accent);
     box-shadow: var(--ctrl-shadow-hover);
-    transform: translateY(-1px);
+}
+/* Hover-to-expand pill: only buttons that actually contain a .btn-label child
+   widen on hover. Removing the <span class="btn-label"> from a button's markup
+   disables its expansion while keeping all of this styling intact. */
+.brand-toggle:has(.btn-label):hover,
+.nav-back:has(.btn-label):hover,
+.theme-toggle:has(.btn-label):hover,
+.search-toggle:has(.btn-label):hover,
+.toc-toggle:has(.btn-label):hover,
+.doc-nav:has(.btn-label):hover {
+    padding: 0 14px;
 }
 .brand-toggle:active,
+.nav-back:active,
 .theme-toggle:active,
 .search-toggle:active,
-.toc-toggle:active { transform: translateY(0) scale(0.94); }
+.toc-toggle:active,
+.doc-nav:active { transform: scale(0.94); }
 .brand-toggle .icon,
+.nav-back .icon,
 .theme-toggle .icon,
 .search-toggle .icon,
-.toc-toggle .icon { width: 17px; height: 17px; }
+.toc-toggle .icon,
+.doc-nav .icon { width: 17px; height: 17px; }
 
-/* The brand/sidebar toggle icon carries the brand accent color. */
+/* === Hover-to-expand button labels === */
+.btn-label {
+    display: inline-block;
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    transition: max-width 0.36s cubic-bezier(0.32,0.72,0,1),
+                opacity 0.28s ease,
+                margin-left 0.36s cubic-bezier(0.32,0.72,0,1);
+}
+.brand-toggle:hover .btn-label,
+.nav-back:hover .btn-label,
+.theme-toggle:hover .btn-label,
+.search-toggle:hover .btn-label,
+.toc-toggle:hover .btn-label,
+.doc-nav:hover .btn-label {
+    max-width: 120px;
+    opacity: 1;
+    margin-left: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-label { transition: none; }
+}
+
+/* Navbar button groups: prev/next live in their own wrapper, the search/theme/
+   TOC tools in another, so the two clusters are visually distinct. */
+.nav-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* History-back and the prev/next buttons dim + disable when there is nowhere
+   to go (start/end of the collection, or no navigation history yet). */
+.nav-back:disabled,
+.doc-nav:disabled {
+    opacity: 0.32;
+    cursor: default;
+    pointer-events: none;
+    box-shadow: var(--ctrl-shadow);
+    transform: none;
+}
+
+/* The brand/sidebar toggle icon carries the brand accent color. It stays a
+   fixed circular branding mark and does NOT expand into a labelled pill. */
 .brand-toggle { color: var(--accent); }
-.brand-toggle:hover { color: var(--text-link-hover); }
+.brand-toggle:hover { color: var(--text-link-hover); padding: 0; }
 
 /* === Search widget === */
 .search-widget {
-    margin-left: auto;
     padding: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 14px;          /* larger gap separates the two button groups */
     flex-shrink: 0;
 }
 
@@ -416,6 +590,8 @@ body.nav-condensed .nav-doc-title {
     background: var(--ctrl-bg);
     border: 1px solid var(--ctrl-border);
     box-shadow: var(--ctrl-shadow);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     border-radius: 999px;
     padding: 3px 9px;
     line-height: 1.4;
@@ -436,7 +612,7 @@ body.nav-condensed .nav-doc-title {
     background: var(--bg-search-overlay-inner);
     border: 1px solid var(--border-header);
     border-radius: 8px;
-    width: 720px;
+    width: min(720px, 94vw);
     max-height: 70vh;
     display: flex;
     flex-direction: column;
@@ -658,6 +834,33 @@ body.nav-condensed .nav-doc-title {
     margin: 0;
 }
 
+/* Apple-style fade-in for the navigation entries each time a sidebar opens. */
+@keyframes nav-item-in {
+    from { opacity: 0; transform: scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+/* Both sidebars share the exact same entrance. The left "Documents" tree nests
+   its file entries inside .nav-dir-children (not .nav-list), so it must be
+   covered too -- otherwise nested items wouldn't animate and the two sidebars
+   would look mismatched. */
+.sidebar-nav:not(.collapsed) .nav-list > li,
+.sidebar-nav:not(.collapsed) .nav-dir-children > li,
+.toc-sidebar:not(.collapsed) .nav-list > li {
+    animation: nav-item-in 0.4s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+.nav-list > li:nth-child(1), .nav-dir-children > li:nth-child(1) { animation-delay: 0.02s; }
+.nav-list > li:nth-child(2), .nav-dir-children > li:nth-child(2) { animation-delay: 0.05s; }
+.nav-list > li:nth-child(3), .nav-dir-children > li:nth-child(3) { animation-delay: 0.08s; }
+.nav-list > li:nth-child(4), .nav-dir-children > li:nth-child(4) { animation-delay: 0.11s; }
+.nav-list > li:nth-child(5), .nav-dir-children > li:nth-child(5) { animation-delay: 0.14s; }
+.nav-list > li:nth-child(6), .nav-dir-children > li:nth-child(6) { animation-delay: 0.17s; }
+.nav-list > li:nth-child(n+7), .nav-dir-children > li:nth-child(n+7) { animation-delay: 0.2s; }
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-nav:not(.collapsed) .nav-list > li,
+    .sidebar-nav:not(.collapsed) .nav-dir-children > li,
+    .toc-sidebar:not(.collapsed) .nav-list > li { animation: none; }
+}
+
 .nav-list a {
     display: block;
     padding: 3px 10px;
@@ -725,12 +928,242 @@ body.nav-condensed .nav-doc-title {
     box-shadow: var(--shadow-sm);
     transition: background 0.25s, border-color 0.25s;
 }
-.tab-content.active { display: block; animation: fade-in 0.28s ease; }
+.tab-content.active { display: block; animation: fade-in 0.45s cubic-bezier(0.32, 0.72, 0, 1); }
 
 @keyframes fade-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: scale(0.99); }
     to   { opacity: 1; transform: none; }
 }
+
+/* === Reading progress bar (top of viewport) === */
+.read-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--text-link-hover));
+    z-index: 120;
+    pointer-events: none;
+    /* width is set imperatively; keep the easing tiny so it tracks the scroll. */
+    transition: width 0.08s linear;
+}
+
+/* === Skip-to-content (keyboard / screen-reader) === */
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    z-index: 300;
+    background: var(--accent);
+    color: var(--nav-doc-active-fg);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+.skip-link:focus { transform: translateX(-50%) translateY(0); }
+
+/* === Doc meta line (breadcrumb + reading time) === */
+.doc-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 22px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.doc-breadcrumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.doc-breadcrumb .crumb-sep { opacity: 0.5; }
+.doc-reading-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    white-space: nowrap;
+}
+.doc-reading-time .icon { width: 13px; height: 13px; }
+
+/* === Back-to-top floating button === */
+.to-top {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--ctrl-bg);
+    border: 1px solid var(--ctrl-border);
+    box-shadow: var(--ctrl-shadow);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    color: var(--text-secondary);
+    cursor: pointer;
+    z-index: 110;
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.32,0.72,0,1), transform 0.3s cubic-bezier(0.32,0.72,0,1), color 0.2s, background 0.2s;
+}
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { color: var(--accent); background: var(--ctrl-bg-hover); }
+.to-top:active { transform: scale(0.92); }
+.to-top .icon { width: 18px; height: 18px; }
+
+/* === Heading permalink anchors === */
+.tab-content .heading-anchor {
+    position: relative;
+    opacity: 0;
+    margin-left: 8px;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: none;
+    cursor: pointer;
+    transition: opacity 0.15s, color 0.15s;
+}
+.tab-content h1:hover .heading-anchor,
+.tab-content h2:hover .heading-anchor,
+.tab-content h3:hover .heading-anchor,
+.tab-content h4:hover .heading-anchor { opacity: 0.7; }
+.tab-content .heading-anchor:hover { opacity: 1; color: var(--accent); background: none; }
+
+/* "Link copied" confirmation bubble shown after clicking a permalink. */
+.tab-content .heading-anchor.copied { opacity: 1; color: var(--text-heading-h4); }
+.tab-content .heading-anchor.copied::after {
+    content: "Link copied";
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--nav-doc-active-fg);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: var(--shadow-md);
+    animation: anchor-tip 1.4s ease forwards;
+}
+@keyframes anchor-tip {
+    0%      { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    12%, 78% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100%    { opacity: 0; transform: translateX(-50%) translateY(-3px); }
+}
+
+/* === Callouts / admonitions (built at conversion time) === */
+.callout {
+    margin: 18px 0;
+    padding: 12px 16px 12px 14px;
+    border: 1px solid var(--border-main);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background: var(--bg-blockquote);
+}
+.callout-title {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    margin-bottom: 4px;
+    color: var(--accent);
+}
+.callout-body > :first-child { margin-top: 0; }
+.callout-body > :last-child { margin-bottom: 0; }
+.callout-note      { border-left-color: var(--text-link);     }
+.callout-note .callout-title    { color: var(--text-link);     }
+.callout-tip       { border-left-color: var(--text-heading-h4); }
+.callout-tip .callout-title     { color: var(--text-heading-h4); }
+.callout-important { border-left-color: var(--text-heading-h3); }
+.callout-important .callout-title { color: var(--text-heading-h3); }
+.callout-warning   { border-left-color: var(--text-heading-h2); }
+.callout-warning .callout-title { color: var(--text-heading-h2); }
+.callout-caution   { border-left-color: #e0555f; }
+.callout-caution .callout-title { color: #e0555f; }
+
+/* === Diagrams (```diagram blocks, rendered to nested boxes at build time) === */
+.diagram {
+    margin: 22px 0;
+    padding: 24px 24px 28px;
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg, 16px);
+    background: linear-gradient(180deg, rgba(127,127,127,0.04), transparent);
+}
+.diagram-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+/* A titled box. Title sits on the top border like a fieldset legend. */
+.dbox {
+    position: relative;
+    border: 1.5px solid var(--dbox-color, var(--border-main));
+    border-radius: 13px;
+    padding: 20px 20px 18px;
+    margin-top: 22px;
+    background: var(--dbox-fill, rgba(127,127,127,0.03));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), var(--shadow-md);
+}
+.dbox:first-child { margin-top: 4px; }
+.dbox > .dbox-title {
+    position: absolute;
+    top: -9px;
+    left: 18px;
+    padding: 1px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--dbox-color, var(--text-primary));
+    background: var(--bg-content);
+}
+.dbox.dashed { border-style: dashed; }
+.dtext {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 8px 0;
+}
+.dtext:first-of-type { margin-top: 4px; }
+.dtext:last-child { margin-bottom: 0; }
+.dtext b { color: var(--text-primary); font-weight: 700; }
+.dtext code, .dbox-title code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--bg-code-inline);
+    padding: 1px 5px;
+    border-radius: 5px;
+}
+/* color variants drive both border + legend via a single custom property */
+.dbox.blue   { --dbox-color: var(--d-blue);   --dbox-fill: color-mix(in srgb, var(--d-blue) 7%, transparent); }
+.dbox.green  { --dbox-color: var(--d-green);  --dbox-fill: color-mix(in srgb, var(--d-green) 7%, transparent); }
+.dbox.orange { --dbox-color: var(--d-orange); --dbox-fill: color-mix(in srgb, var(--d-orange) 7%, transparent); }
+.dbox.red    { --dbox-color: var(--d-red);    --dbox-fill: color-mix(in srgb, var(--d-red) 7%, transparent); }
+.dbox.purple { --dbox-color: var(--d-purple); --dbox-fill: color-mix(in srgb, var(--d-purple) 7%, transparent); }
+.dbox.teal   { --dbox-color: var(--d-teal);   --dbox-fill: color-mix(in srgb, var(--d-teal) 7%, transparent); }
+.dbox.gray   { --dbox-color: var(--d-gray);   --dbox-fill: color-mix(in srgb, var(--d-gray) 7%, transparent); }
+
+/* === Visible keyboard focus rings === */
+/* Keyboard focus ring. Do NOT set border-radius here -- modern browsers round
+   the outline to the element's own radius, and forcing a radius would square
+   off the pill-shaped document selector when focused. */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.doc-select:focus-visible, .nav-list a:focus-visible { outline-offset: 1px; }
 
 /* === Headings === */
 .tab-content h1, .tab-content h2, .tab-content h3,
@@ -992,6 +1425,20 @@ body.nav-condensed .nav-doc-title {
 }
 .tab-content tbody tr:hover td { background: var(--accent-soft); }
 
+/* Tables are wrapped (via JS) in a scroll container so wide tables never blow
+   out the layout; on narrow screens they scroll horizontally instead. */
+.table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 18px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.table-scroll::-webkit-scrollbar { height: 8px; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+.table-scroll > table { margin: 0; }
+
 /* === Horizontal rules === */
 .tab-content hr {
     border: none;
@@ -1013,15 +1460,24 @@ body.nav-condensed .nav-doc-title {
 .tab-content blockquote p:last-child { margin-bottom: 0; }
 
 /* === Responsive === */
+
+/* Media never overflows its container. */
+.tab-content img,
+.tab-content video,
+.tab-content svg { max-width: 100%; height: auto; }
+
+/* ---- Tablets & iPad (portrait + landscape): sidebars become overlay drawers ---- */
 @media (max-width: 1024px) {
-    .brand { display: none; }
-    .content-area { padding: calc(var(--header-height) + 20px) 16px 64px; }
+    /* Keep the sidebar toggle reachable; just drop the long collection title so
+       the controls fit. The condensed title still names the current doc. */
+    .brand-name { display: none; }
+    .brand { margin-right: 0; }
+
+    .content-area { padding: calc(var(--header-height) + 18px) 20px 64px; }
     .tab-content { padding: 26px 22px 40px; border-radius: var(--radius-md); }
-    .search-widget input { width: 150px; }
-    .search-widget input:focus { width: 200px; }
     .search-kbd { display: none; }
 
-    /* Sidebars overlay logic on tablets/mobile */
+    /* Sidebars float over the content instead of squeezing it. */
     .sidebar-nav, .toc-sidebar {
         position: fixed;
         top: 0;
@@ -1030,21 +1486,15 @@ body.nav-condensed .nav-doc-title {
         background: var(--bg-sidebar);
         box-shadow: var(--shadow-lg);
     }
-    .sidebar-nav {
-        left: 0;
-        border-right: 1px solid var(--border-main);
-    }
-    .toc-sidebar {
-        right: 0;
-        border-left: 1px solid var(--border-main);
-    }
-    
-    /* Backdrop when sidebar is active */
+    .sidebar-nav { left: 0; border-right: 1px solid var(--border-main); }
+    .toc-sidebar { right: 0; border-left: 1px solid var(--border-main); }
+
+    /* Dimmed, blurred backdrop while either drawer is open. */
     body::before {
         content: "";
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.4);
+        inset: 0;
+        background: rgba(0,0,0,0.45);
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
         z-index: 140;
@@ -1058,12 +1508,74 @@ body.nav-condensed .nav-doc-title {
         pointer-events: auto;
     }
 }
-@media (max-width: 600px) {
-    .doc-selector-label { display: none; }
-    .sidebar-nav, .toc-sidebar {
-        width: 80vw;
-        min-width: 80vw;
+
+/* ---- Small tablets / large phones (e.g. iPad portrait, big phones) ---- */
+@media (max-width: 768px) {
+    /* Respect the notch / rounded corners on iOS. */
+    .header-inner {
+        gap: 8px;
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
     }
+    /* Let the document picker take whatever width is left (an auto left margin
+       would otherwise swallow the free space and block flex-grow). */
+    .doc-selector { flex: 1 1 auto; margin-left: 0; }
+    .doc-select { min-width: 0; max-width: none; width: 100%; }
+
+    .content-area {
+        padding-left: max(14px, env(safe-area-inset-left));
+        padding-right: max(14px, env(safe-area-inset-right));
+        padding-top: calc(var(--header-height) + 14px);
+        padding-bottom: 56px;
+    }
+    /* Edge-to-edge reading panel on small screens. */
+    .tab-content { padding: 22px 16px 36px; border: none; border-radius: 0; box-shadow: none; }
+    .tab-content h1 { font-size: 1.7em; }
+    .tab-content h2 { font-size: 1.34em; }
+    .tab-content h3 { font-size: 1.16em; }
+
+    /* Wide tables grow to their content and scroll inside the wrapper. */
+    .table-scroll > table { width: auto; min-width: 100%; }
+    /* Long unbroken tokens wrap instead of overflowing. */
+    .tab-content p code, .tab-content li code { overflow-wrap: anywhere; word-break: break-word; }
+
+    .sidebar-nav, .toc-sidebar { width: min(86vw, 340px); min-width: 0; }
+}
+
+/* ---- Phones ---- */
+@media (max-width: 600px) {
+    :root { --header-height: 52px; }
+    body { font-size: 15px; }
+    .doc-selector-label { display: none; }
+    /* Header is tight on phones: drop the prev/next pair (the picker still
+       switches documents). */
+    .nav-btn-group-docnav { display: none; }
+    .header-inner { gap: 6px; }
+    .search-widget { gap: 6px; }
+    /* Comfortable tap targets. */
+    .brand-toggle, .theme-toggle, .search-toggle, .toc-toggle { width: 38px; height: 38px; }
+    .doc-select { height: 38px; }
+    .content-area { padding-top: calc(var(--header-height) + 10px); padding-bottom: 48px; }
+    .tab-content { padding: 18px 14px 32px; }
+    .tab-content h1 { font-size: 1.5em; padding-bottom: 12px; margin-bottom: 18px; }
+    .tab-content h2 { margin: 30px 0 12px; }
+    .tab-content pre { padding: 14px 14px 12px; }
+    /* No hover on touch, so keep the copy button visible. */
+    .code-copy-btn { opacity: 1; transform: none; }
+    .nav-doc-title { max-width: 64vw; font-size: 13px; padding: 6px 14px; }
+}
+
+/* ---- Very small phones ---- */
+@media (max-width: 380px) {
+    .header-inner { gap: 4px; padding-left: 8px; padding-right: 8px; }
+    .brand-toggle, .theme-toggle, .search-toggle, .toc-toggle { width: 36px; height: 36px; }
+    .tab-content { padding: 16px 11px 28px; }
+}
+
+/* Devices that can't hover (touch): always show the copy button. */
+@media (hover: none) {
+    .code-copy-btn { opacity: 1; transform: none; }
+    .tab-content pre:hover .code-lang-label { opacity: 1; }
 }
 
 /* === Print === */
@@ -1078,11 +1590,17 @@ body.nav-condensed .nav-doc-title {
 </head>
 <body data-theme="dark" class="sidebar-collapsed toc-collapsed">
 
+<a class="skip-link" href="#tabPanels">Skip to content</a>
+<div class="read-progress" id="readProgress"></div>
+
 <div class="header-bar">
   <div class="header-inner" id="headerInner">
     <div class="brand">
       <button class="brand-toggle" id="sidebarToggle" title="Toggle sidebar (Ctrl+B)" aria-label="Toggle sidebar">
         <svg class="icon brand-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"></path></svg>
+      </button>
+      <button class="nav-back" id="navBack" title="Go back (Alt+&larr;)" aria-label="Go back" disabled>
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.78 1.97a.75.75 0 0 1 0 1.06L3.81 6h6.44A4.75 4.75 0 0 1 15 10.75v2.5a.75.75 0 0 1-1.5 0v-2.5a3.25 3.25 0 0 0-3.25-3.25H3.81l2.97 2.97a.75.75 0 1 1-1.06 1.06L1.47 7.28a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"></path></svg>
       </button>
       <span class="brand-name">nageshnnazare/compiler-optimizations-know-how</span>
     </div>
@@ -1090,13 +1608,23 @@ body.nav-condensed .nav-doc-title {
       <select class="doc-select" id="docSelect" title="Switch document"></select>
     </div>
     <div class="search-widget">
-      <button class="search-toggle" id="searchTrigger" title="Search all documents (Ctrl+K)" aria-label="Search">
-        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"></path></svg>
-      </button>
-      <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode (Ctrl+Shift+L)" aria-label="Toggle theme"></button>
-      <button class="toc-toggle" id="tocToggle" title="Toggle table of contents (Ctrl+I)" aria-label="Toggle table of contents">
-        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm3.75-1.5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5ZM2 9a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm2.75-.5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Z"></path></svg>
-      </button>
+      <div class="nav-btn-group nav-btn-group-docnav">
+        <button class="doc-nav" id="docPrev" title="Previous document" aria-label="Previous document">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 1.06L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z"></path></svg>
+        </button>
+        <button class="doc-nav" id="docNext" title="Next document" aria-label="Next document">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"></path></svg>
+        </button>
+      </div>
+      <div class="nav-btn-group nav-btn-group-tools">
+        <button class="search-toggle" id="searchTrigger" title="Search all documents (Ctrl+K)" aria-label="Search">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"></path></svg>
+        </button>
+        <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode (Ctrl+Shift+L)" aria-label="Toggle theme"></button>
+        <button class="toc-toggle" id="tocToggle" title="Toggle table of contents (Ctrl+I)" aria-label="Toggle table of contents">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm3.75-1.5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5ZM2 9a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm2.75-.5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Z"></path></svg>
+        </button>
+      </div>
     </div>
     <div class="nav-doc-title" id="navDocTitle" aria-hidden="true"></div>
   </div>
@@ -1127,6 +1655,9 @@ body.nav-condensed .nav-doc-title {
   <div class="content-area">
     <div id="tabPanels"></div>
   </div>
+  <button class="to-top" id="toTop" title="Back to top" aria-label="Back to top">
+    <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.47 7.78a.75.75 0 0 1 0-1.06l4-4a.75.75 0 0 1 1.06 0l4 4a.75.75 0 0 1-1.06 1.06L8.75 4.81V13a.75.75 0 0 1-1.5 0V4.81L4.53 7.78a.75.75 0 0 1-1.06 0Z"></path></svg>
+  </button>
   <nav class="toc-sidebar collapsed" id="tocSidebar">
     <div class="sidebar-section" id="tocSection">
       <div class="nav-title">
@@ -1140,7 +1671,7 @@ body.nav-condensed .nav-doc-title {
 
 <script>
 const TAB_DATA = [
-  { name: `1. README`, path: `README.md`, dir: ``, body: `<h1 id="compiler-optimizations--the-complete-field-guide">Compiler Optimizations — The Complete Field Guide</h1>
+  { name: `1. README`, path: `README.md`, dir: ``, words: 779, mins: 4, body: `<h1 id="compiler-optimizations--the-complete-field-guide">Compiler Optimizations — The Complete Field Guide</h1>
 <p>A one-stop, hands-on, deeply illustrated reference for <strong>GCC</strong> and <strong>LLVM/Clang</strong>
 optimization passes. Every example follows the same pattern:</p>
 <ol>
@@ -1148,12 +1679,18 @@ optimization passes. Every example follows the same pattern:</p>
 <li><strong>ASCII diagrams</strong> — CFG, dataflow lattice, IR before/after.</li>
 <li><strong>C source</strong> you can compile and inspect.</li>
 <li><strong>NAIVE asm</strong> — the unoptimized version (what a &ldquo;literal&rdquo; compiler would emit).</li>
-<li><strong>ACTUAL asm</strong> — the real <code>clang -O3</code> output in NASM / Intel syntax, annotated
+<li>
+<p><strong>ACTUAL asm</strong> — the real <code>clang -O3</code> output in NASM / Intel syntax, annotated
    line by line. All asm comments were generated from real compiler output via
-   <code>scripts/x86_asm.sh</code> so they match what you&rsquo;ll see on your machine.</li>
-<li><strong>WHY</strong> — the legality conditions and cost-model reasoning that justify (or
-   block) the transform.</li>
-<li><strong>Flags</strong> to enable, disable, dump, and tune the pass in both GCC and Clang.</li>
+   <code>scripts/x86_asm.sh</code> so they match what you&rsquo;ll see on your machine.</p>
+</li>
+<li>
+<p><strong>WHY</strong> — the legality conditions and cost-model reasoning that justify (or
+   block) the transform.</p>
+</li>
+<li>
+<p><strong>Flags</strong> to enable, disable, dump, and tune the pass in both GCC and Clang.</p>
+</li>
 <li><strong>Pitfalls</strong> — when the pass does nothing, or worse, hurts performance.</li>
 </ol>
 <p><strong>Generate the x86 asm for any example yourself</strong>:</p>
@@ -1322,9 +1859,13 @@ make -C 01_local_optimizations 01_const_fold.asm   # dump assembly with -O3
 </ul>
 <h2 id="reading-order-recommendations">Reading order recommendations</h2>
 <ul>
-<li><strong>Quick refresher</strong> — read <code>00_fundamentals/</code>, then jump to the chapter you
-  need.</li>
-<li><strong>Performance engineer onboarding</strong> — 00 → 01 → 02 → 06 → 08 → 10 → 13.</li>
+<li>
+<p><strong>Quick refresher</strong> — read <code>00_fundamentals/</code>, then jump to the chapter you
+  need.</p>
+</li>
+<li>
+<p><strong>Performance engineer onboarding</strong> — 00 → 01 → 02 → 06 → 08 → 10 → 13.</p>
+</li>
 <li><strong>Compiler-internals interview prep</strong> — 00 → 04 → 07 → 09 → 06 → 02.</li>
 <li><strong>Toolchain author / language designer</strong> — 00 → 11 → 12 → 03 → 10.</li>
 </ul>
@@ -1338,7 +1879,7 @@ GCC/LLVM pass that performs the transformation.</p>
 Intel syntax (<code>-masm=intel</code>), because that makes register operands easier to
 read. ARM64 equivalents are noted where they differ in interesting ways.</p>
 </blockquote>` },
-  { name: `2. Fundamentals`, path: `00_fundamentals/README.md`, dir: `00_fundamentals`, body: `<h1 id="00--fundamentals">00 — Fundamentals</h1>
+  { name: `2. Fundamentals`, path: `00_fundamentals/README.md`, dir: `00_fundamentals`, words: 1333, mins: 7, body: `<h1 id="00--fundamentals">00 — Fundamentals</h1>
 <p>Before you can recognize an optimization, you need a shared vocabulary for the
 <strong>stages</strong> a compiler goes through and the <strong>shapes</strong> the program takes inside
 the compiler. This chapter is a short, picture-heavy tour of the pieces every
@@ -1594,13 +2135,21 @@ ls file.c.*ssa*  file.c.*optimized*
 information (dominators, loop nests, alias sets) that transforms consume.</p>
 <p>Key analyses (see <a href="../04_data_flow_analysis/"><code>04_data_flow_analysis/</code></a>):</p>
 <ul>
-<li><strong>Dominator tree</strong> — node A <em>dominates</em> node B if every path from entry to
-  B passes through A. Required by SSA construction, LICM, GVN.</li>
-<li><strong>Loop info</strong> — natural loops, nesting, preheader, latch, exits.</li>
+<li>
+<p><strong>Dominator tree</strong> — node A <em>dominates</em> node B if every path from entry to
+  B passes through A. Required by SSA construction, LICM, GVN.</p>
+</li>
+<li>
+<p><strong>Loop info</strong> — natural loops, nesting, preheader, latch, exits.</p>
+</li>
 <li><strong>Alias analysis (AA)</strong> — &ldquo;can these two pointers refer to the same memory?&rdquo;</li>
-<li><strong>Scalar evolution (SCEV)</strong> — closed-form descriptions of how a value changes
-  per loop iteration.</li>
-<li><strong>Liveness</strong> — which variables are still needed after a given point.</li>
+<li>
+<p><strong>Scalar evolution (SCEV)</strong> — closed-form descriptions of how a value changes
+  per loop iteration.</p>
+</li>
+<li>
+<p><strong>Liveness</strong> — which variables are still needed after a given point.</p>
+</li>
 </ul>
 <h2 id="5-optimization-levels-at-a-glance">5. Optimization levels at a glance</h2>
 <pre><code>          ┌── Debuggability ─────────────────────────────────►
@@ -1666,7 +2215,7 @@ questions:</p>
 <p>If you can answer those three for a pass, you understand it.</p>
 <h2 id="next">Next</h2>
 <p>➡ Continue to <a href="../01_local_optimizations/"><code>01_local_optimizations/</code></a>.</p>` },
-  { name: `3. Local Optimizations / Const Fold`, path: `01_local_optimizations/01_const_fold.c`, dir: `01_local_optimizations`, body: `<h1 id="01_const_foldc">01_const_fold.c</h1>
+  { name: `3. Local Optimizations / Const Fold`, path: `01_local_optimizations/01_const_fold.c`, dir: `01_local_optimizations`, words: 879, mins: 4, body: `<h1 id="01_const_foldc">01_const_fold.c</h1>
 <pre><code class="language-c">/* 01_const_fold.c — CONSTANT FOLDING
  * ============================================================================
  *
@@ -1820,7 +2369,7 @@ int compute_runtime(int x) {
 }
 
 </code></pre>` },
-  { name: `4. Local Optimizations / Const Propagation`, path: `01_local_optimizations/02_const_propagation.c`, dir: `01_local_optimizations`, body: `<h1 id="02_const_propagationc">02_const_propagation.c</h1>
+  { name: `4. Local Optimizations / Const Propagation`, path: `01_local_optimizations/02_const_propagation.c`, dir: `01_local_optimizations`, words: 719, mins: 4, body: `<h1 id="02_const_propagationc">02_const_propagation.c</h1>
 <pre><code class="language-c">/* 02_const_propagation.c — CONSTANT &amp; COPY PROPAGATION
  * ============================================================================
  *
@@ -1943,7 +2492,7 @@ int copy_prop(int a) {
 }
 
 </code></pre>` },
-  { name: `5. Local Optimizations / Cse`, path: `01_local_optimizations/03_cse.c`, dir: `01_local_optimizations`, body: `<h1 id="03_csec">03_cse.c</h1>
+  { name: `5. Local Optimizations / Cse`, path: `01_local_optimizations/03_cse.c`, dir: `01_local_optimizations`, words: 1100, mins: 6, body: `<h1 id="03_csec">03_cse.c</h1>
 <pre><code class="language-c">/* 03_cse.c — COMMON SUBEXPRESSION ELIMINATION
  * ============================================================================
  *
@@ -2127,7 +2676,7 @@ int cse_loads(const int * restrict a, int * restrict b) {
 }
 
 </code></pre>` },
-  { name: `6. Local Optimizations / Dead Code`, path: `01_local_optimizations/04_dead_code.c`, dir: `01_local_optimizations`, body: `<h1 id="04_dead_codec">04_dead_code.c</h1>
+  { name: `6. Local Optimizations / Dead Code`, path: `01_local_optimizations/04_dead_code.c`, dir: `01_local_optimizations`, words: 797, mins: 4, body: `<h1 id="04_dead_codec">04_dead_code.c</h1>
 <pre><code class="language-c">/* 04_dead_code.c — DEAD CODE ELIMINATION (DCE, ADCE, BDCE)
  * ============================================================================
  *
@@ -2269,7 +2818,7 @@ uint32_t low_byte(uint32_t x) {
 }
 
 </code></pre>` },
-  { name: `7. Local Optimizations / Algebraic Simpl`, path: `01_local_optimizations/05_algebraic_simpl.c`, dir: `01_local_optimizations`, body: `<h1 id="05_algebraic_simplc">05_algebraic_simpl.c</h1>
+  { name: `7. Local Optimizations / Algebraic Simpl`, path: `01_local_optimizations/05_algebraic_simpl.c`, dir: `01_local_optimizations`, words: 1154, mins: 6, body: `<h1 id="05_algebraic_simplc">05_algebraic_simpl.c</h1>
 <pre><code class="language-c">/* 05_algebraic_simpl.c — ALGEBRAIC SIMPLIFICATION
  * ============================================================================
  *
@@ -2455,7 +3004,7 @@ float fmul_one(float x)    { return x * 1.0f; }
 float fsub_self(float x)   { return x - x; }
 
 </code></pre>` },
-  { name: `8. Local Optimizations / Strength Reduction`, path: `01_local_optimizations/06_strength_reduction.c`, dir: `01_local_optimizations`, body: `<h1 id="06_strength_reductionc">06_strength_reduction.c</h1>
+  { name: `8. Local Optimizations / Strength Reduction`, path: `01_local_optimizations/06_strength_reduction.c`, dir: `01_local_optimizations`, words: 1065, mins: 5, body: `<h1 id="06_strength_reductionc">06_strength_reduction.c</h1>
 <pre><code class="language-c">/* 06_strength_reduction.c — STRENGTH REDUCTION
  * ============================================================================
  *
@@ -2637,7 +3186,7 @@ void scale_index(int *a, int n) {
 }
 
 </code></pre>` },
-  { name: `9. Local Optimizations / Peephole`, path: `01_local_optimizations/07_peephole.c`, dir: `01_local_optimizations`, body: `<h1 id="07_peepholec">07_peephole.c</h1>
+  { name: `9. Local Optimizations / Peephole`, path: `01_local_optimizations/07_peephole.c`, dir: `01_local_optimizations`, words: 825, mins: 4, body: `<h1 id="07_peepholec">07_peephole.c</h1>
 <pre><code class="language-c">/* 07_peephole.c — PEEPHOLE / INSTRUCTION COMBINING
  * ============================================================================
  *
@@ -2789,7 +3338,7 @@ int signmask_from_bool(int cond) {
 }
 
 </code></pre>` },
-  { name: `10. Local Optimizations / Branch Simpl`, path: `01_local_optimizations/08_branch_simpl.c`, dir: `01_local_optimizations`, body: `<h1 id="08_branch_simplc">08_branch_simpl.c</h1>
+  { name: `10. Local Optimizations / Branch Simpl`, path: `01_local_optimizations/08_branch_simpl.c`, dir: `01_local_optimizations`, words: 724, mins: 4, body: `<h1 id="08_branch_simplc">08_branch_simpl.c</h1>
 <pre><code class="language-c">/* 08_branch_simpl.c — BRANCH SIMPLIFICATION &amp; SIMPLIFY-CFG
  * ============================================================================
  *
@@ -2932,7 +3481,7 @@ int chained(int x) {
 }
 
 </code></pre>` },
-  { name: `11. Local Optimizations / Bit Tricks`, path: `01_local_optimizations/09_bit_tricks.c`, dir: `01_local_optimizations`, body: `<h1 id="09_bit_tricksc">09_bit_tricks.c</h1>
+  { name: `11. Local Optimizations / Bit Tricks`, path: `01_local_optimizations/09_bit_tricks.c`, dir: `01_local_optimizations`, words: 938, mins: 5, body: `<h1 id="09_bit_tricksc">09_bit_tricks.c</h1>
 <pre><code class="language-c">/* 09_bit_tricks.c — BIT-LEVEL IDIOM RECOGNITION
  * ============================================================================
  *
@@ -3119,7 +3668,7 @@ uint32_t bswap_pattern(uint32_t x) {
 }
 
 </code></pre>` },
-  { name: `12. Local Optimizations / Load Combine`, path: `01_local_optimizations/10_load_combine.c`, dir: `01_local_optimizations`, body: `<h1 id="10_load_combinec">10_load_combine.c</h1>
+  { name: `12. Local Optimizations / Load Combine`, path: `01_local_optimizations/10_load_combine.c`, dir: `01_local_optimizations`, words: 823, mins: 4, body: `<h1 id="10_load_combinec">10_load_combine.c</h1>
 <pre><code class="language-c">/* 10_load_combine.c — LOAD/STORE COMBINING &amp; MEMSET/MEMCPY RECOGNITION
  * ============================================================================
  *
@@ -3269,7 +3818,7 @@ void copy_loop(uint8_t *dst, const uint8_t *src) {
 }
 
 </code></pre>` },
-  { name: `13. Local Optimizations`, path: `01_local_optimizations/README.md`, dir: `01_local_optimizations`, body: `<h1 id="01--local-optimizations">01 — Local Optimizations</h1>
+  { name: `13. Local Optimizations`, path: `01_local_optimizations/README.md`, dir: `01_local_optimizations`, words: 1630, mins: 8, body: `<h1 id="01--local-optimizations">01 — Local Optimizations</h1>
 <blockquote>
 <p>&ldquo;Local&rdquo; = within a <strong>single basic block</strong>, or at most within a single
 function with simple analysis. These are the cheapest passes and the ones
@@ -3383,15 +3932,23 @@ grep -E '^\\s*(mov|imul|add)' 01_const_fold.asm
 <p>You will see literally <code>mov eax, 13</code> at <code>-O1</code> and above.</p>
 <h3 id="where-it-lives">Where it lives</h3>
 <ul>
-<li><strong>LLVM</strong>: <code>InstSimplify</code>, <code>ConstantFold</code>, <code>SCCP</code> (sparse conditional constant
-  propagation does folding + propagation together).</li>
-<li><strong>GCC</strong>: <code>fold-const.cc</code>, the GIMPLE pass <code>forwprop</code> (forward propagation).</li>
+<li>
+<p><strong>LLVM</strong>: <code>InstSimplify</code>, <code>ConstantFold</code>, <code>SCCP</code> (sparse conditional constant
+  propagation does folding + propagation together).</p>
+</li>
+<li>
+<p><strong>GCC</strong>: <code>fold-const.cc</code>, the GIMPLE pass <code>forwprop</code> (forward propagation).</p>
+</li>
 </ul>
 <h3 id="pitfalls">Pitfalls</h3>
 <ul>
-<li><strong>Floating-point</strong> folding requires <code>-ffast-math</code> for results that change
-  the rounding behaviour (e.g. reassociating <code>(a + b) + c</code>).</li>
-<li><strong>Volatile</strong> operands are never folded.</li>
+<li>
+<p><strong>Floating-point</strong> folding requires <code>-ffast-math</code> for results that change
+  the rounding behaviour (e.g. reassociating <code>(a + b) + c</code>).</p>
+</li>
+<li>
+<p><strong>Volatile</strong> operands are never folded.</p>
+</li>
 <li>Folding of <code>1 &lt;&lt; 64</code> (UB) is allowed but typically suppressed under
   <code>-fsanitize=undefined</code>.</li>
 </ul>
@@ -3446,10 +4003,14 @@ expressions that hash to the same number are interchangeable.</p>
 </code></pre>
 <h3 id="where-it-lives_2">Where it lives</h3>
 <ul>
-<li><strong>LLVM</strong>: <code>EarlyCSE</code>, then global <code>GVN</code> (Global Value Numbering) which is
-  CSE across the whole CFG.</li>
-<li><strong>GCC</strong>: <code>tree-ssa-pre.cc</code> (Partial Redundancy Elimination subsumes CSE),
-  <code>tree-ssa-dom.cc</code> (dominator-based CSE).</li>
+<li>
+<p><strong>LLVM</strong>: <code>EarlyCSE</code>, then global <code>GVN</code> (Global Value Numbering) which is
+  CSE across the whole CFG.</p>
+</li>
+<li>
+<p><strong>GCC</strong>: <code>tree-ssa-pre.cc</code> (Partial Redundancy Elimination subsumes CSE),
+  <code>tree-ssa-dom.cc</code> (dominator-based CSE).</p>
+</li>
 </ul>
 <h3 id="pitfalls_1">Pitfalls</h3>
 <ul>
@@ -3486,9 +4047,13 @@ delete the rest.</p>
 </code></pre>
 <h3 id="where-it-lives_3">Where it lives</h3>
 <ul>
-<li><strong>LLVM</strong>: <code>DCEPass</code>, <code>ADCEPass</code>, <code>BDCEPass</code> (bit-tracking DCE for masked-out
-  bits).</li>
-<li><strong>GCC</strong>: <code>tree-ssa-dce.cc</code>.</li>
+<li>
+<p><strong>LLVM</strong>: <code>DCEPass</code>, <code>ADCEPass</code>, <code>BDCEPass</code> (bit-tracking DCE for masked-out
+  bits).</p>
+</li>
+<li>
+<p><strong>GCC</strong>: <code>tree-ssa-dce.cc</code>.</p>
+</li>
 </ul>
 <h3 id="pitfalls_2">Pitfalls</h3>
 <ul>
@@ -3655,7 +4220,7 @@ make clean
 ../scripts/dump_gcc_tree.sh 01_const_fold.c      # GIMPLE/RTL dumps + opt-info
 </code></pre>
 <p>➡ Next chapter: <a href="../02_loop_optimizations/"><code>02_loop_optimizations/</code></a>.</p>` },
-  { name: `14. Loop Optimizations / Licm`, path: `02_loop_optimizations/01_licm.c`, dir: `02_loop_optimizations`, body: `<h1 id="01_licmc">01_licm.c</h1>
+  { name: `14. Loop Optimizations / Licm`, path: `02_loop_optimizations/01_licm.c`, dir: `02_loop_optimizations`, words: 1015, mins: 5, body: `<h1 id="01_licmc">01_licm.c</h1>
 <pre><code class="language-c">/* 01_licm.c — LOOP-INVARIANT CODE MOTION
  * ============================================================================
  *
@@ -3838,7 +4403,7 @@ void licm_div_safe(int *a, size_t n, int d) {
 }
 
 </code></pre>` },
-  { name: `15. Loop Optimizations / Unroll`, path: `02_loop_optimizations/02_unroll.c`, dir: `02_loop_optimizations`, body: `<h1 id="02_unrollc">02_unroll.c</h1>
+  { name: `15. Loop Optimizations / Unroll`, path: `02_loop_optimizations/02_unroll.c`, dir: `02_loop_optimizations`, words: 914, mins: 5, body: `<h1 id="02_unrollc">02_unroll.c</h1>
 <pre><code class="language-c">/* 02_unroll.c — LOOP UNROLLING (full + partial)
  * ============================================================================
  *
@@ -4000,7 +4565,7 @@ int reduce(const int *a, size_t n) {
 }
 
 </code></pre>` },
-  { name: `16. Loop Optimizations / Peel`, path: `02_loop_optimizations/03_peel.c`, dir: `02_loop_optimizations`, body: `<h1 id="03_peelc">03_peel.c</h1>
+  { name: `16. Loop Optimizations / Peel`, path: `02_loop_optimizations/03_peel.c`, dir: `02_loop_optimizations`, words: 642, mins: 3, body: `<h1 id="03_peelc">03_peel.c</h1>
 <pre><code class="language-c">/* 03_peel.c — LOOP PEELING
  * ============================================================================
  *
@@ -4109,7 +4674,7 @@ void align_then_vector(float *a, const float *b, size_t n) {
 }
 
 </code></pre>` },
-  { name: `17. Loop Optimizations / Unswitch`, path: `02_loop_optimizations/04_unswitch.c`, dir: `02_loop_optimizations`, body: `<h1 id="04_unswitchc">04_unswitch.c</h1>
+  { name: `17. Loop Optimizations / Unswitch`, path: `02_loop_optimizations/04_unswitch.c`, dir: `02_loop_optimizations`, words: 518, mins: 3, body: `<h1 id="04_unswitchc">04_unswitch.c</h1>
 <pre><code class="language-c">/* 04_unswitch.c — LOOP UNSWITCHING
  * ============================================================================
  *
@@ -4217,7 +4782,7 @@ void unswitch_via_flag(int *a, const int *b, size_t n, const int *opt) {
 }
 
 </code></pre>` },
-  { name: `18. Loop Optimizations / Fusion`, path: `02_loop_optimizations/05_fusion.c`, dir: `02_loop_optimizations`, body: `<h1 id="05_fusionc">05_fusion.c</h1>
+  { name: `18. Loop Optimizations / Fusion`, path: `02_loop_optimizations/05_fusion.c`, dir: `02_loop_optimizations`, words: 518, mins: 3, body: `<h1 id="05_fusionc">05_fusion.c</h1>
 <pre><code class="language-c">/* 05_fusion.c — LOOP FUSION (jamming)
  * ============================================================================
  *
@@ -4303,7 +4868,7 @@ void not_fusable(int *a, int *c, const int *b, size_t n) {
 }
 
 </code></pre>` },
-  { name: `19. Loop Optimizations / Fission`, path: `02_loop_optimizations/06_fission.c`, dir: `02_loop_optimizations`, body: `<h1 id="06_fissionc">06_fission.c</h1>
+  { name: `19. Loop Optimizations / Fission`, path: `02_loop_optimizations/06_fission.c`, dir: `02_loop_optimizations`, words: 371, mins: 2, body: `<h1 id="06_fissionc">06_fission.c</h1>
 <pre><code class="language-c">/* 06_fission.c — LOOP FISSION (distribution)
  * ============================================================================
  *
@@ -4367,7 +4932,7 @@ uint32_t mixed_loop(int *a, const int *b, size_t n) {
 }
 
 </code></pre>` },
-  { name: `20. Loop Optimizations / Interchange`, path: `02_loop_optimizations/07_interchange.c`, dir: `02_loop_optimizations`, body: `<h1 id="07_interchangec">07_interchange.c</h1>
+  { name: `20. Loop Optimizations / Interchange`, path: `02_loop_optimizations/07_interchange.c`, dir: `02_loop_optimizations`, words: 538, mins: 3, body: `<h1 id="07_interchangec">07_interchange.c</h1>
 <pre><code class="language-c">/* 07_interchange.c — LOOP INTERCHANGE
  * ============================================================================
  *
@@ -4462,7 +5027,7 @@ void transpose_naive(int dst[N][N], const int src[N][N]) {
 }
 
 </code></pre>` },
-  { name: `21. Loop Optimizations / Tiling`, path: `02_loop_optimizations/08_tiling.c`, dir: `02_loop_optimizations`, body: `<h1 id="08_tilingc">08_tiling.c</h1>
+  { name: `21. Loop Optimizations / Tiling`, path: `02_loop_optimizations/08_tiling.c`, dir: `02_loop_optimizations`, words: 576, mins: 3, body: `<h1 id="08_tilingc">08_tiling.c</h1>
 <pre><code class="language-c">/* 08_tiling.c — LOOP TILING / BLOCKING
  * ============================================================================
  *
@@ -4550,7 +5115,7 @@ void matmul_tiled(double C[N][N], const double A[N][N], const double B[N][N]) {
 }
 
 </code></pre>` },
-  { name: `22. Loop Optimizations / Iv Simplification`, path: `02_loop_optimizations/09_iv_simplification.c`, dir: `02_loop_optimizations`, body: `<h1 id="09_iv_simplificationc">09_iv_simplification.c</h1>
+  { name: `22. Loop Optimizations / Iv Simplification`, path: `02_loop_optimizations/09_iv_simplification.c`, dir: `02_loop_optimizations`, words: 522, mins: 3, body: `<h1 id="09_iv_simplificationc">09_iv_simplification.c</h1>
 <pre><code class="language-c">/* 09_iv_simplification.c — INDUCTION VARIABLE OPTIMIZATION
  * ============================================================================
  *
@@ -4635,7 +5200,7 @@ int sum_with_check(const int *a, size_t n) {
 }
 
 </code></pre>` },
-  { name: `23. Loop Optimizations / Rerolling`, path: `02_loop_optimizations/10_rerolling.c`, dir: `02_loop_optimizations`, body: `<h1 id="10_rerollingc">10_rerolling.c</h1>
+  { name: `23. Loop Optimizations / Rerolling`, path: `02_loop_optimizations/10_rerolling.c`, dir: `02_loop_optimizations`, words: 497, mins: 2, body: `<h1 id="10_rerollingc">10_rerolling.c</h1>
 <pre><code class="language-c">/* 10_rerolling.c — LOOP REROLLING
  * ============================================================================
  *
@@ -4730,7 +5295,7 @@ void store_unrolled(int *a, int v) {
 }
 
 </code></pre>` },
-  { name: `24. Loop Optimizations / Idiom Recognition`, path: `02_loop_optimizations/11_idiom_recognition.c`, dir: `02_loop_optimizations`, body: `<h1 id="11_idiom_recognitionc">11_idiom_recognition.c</h1>
+  { name: `24. Loop Optimizations / Idiom Recognition`, path: `02_loop_optimizations/11_idiom_recognition.c`, dir: `02_loop_optimizations`, words: 679, mins: 3, body: `<h1 id="11_idiom_recognitionc">11_idiom_recognition.c</h1>
 <pre><code class="language-c">/* 11_idiom_recognition.c — LOOP IDIOM RECOGNITION
  * ============================================================================
  *
@@ -4856,7 +5421,7 @@ unsigned sum_arith(unsigned n) {
 }
 
 </code></pre>` },
-  { name: `25. Loop Optimizations / Versioning`, path: `02_loop_optimizations/12_versioning.c`, dir: `02_loop_optimizations`, body: `<h1 id="12_versioningc">12_versioning.c</h1>
+  { name: `25. Loop Optimizations / Versioning`, path: `02_loop_optimizations/12_versioning.c`, dir: `02_loop_optimizations`, words: 554, mins: 3, body: `<h1 id="12_versioningc">12_versioning.c</h1>
 <pre><code class="language-c">/* 12_versioning.c — LOOP VERSIONING
  * ============================================================================
  *
@@ -4955,7 +5520,7 @@ void aligned_or_not(float *a, const float *b, size_t n) {
 }
 
 </code></pre>` },
-  { name: `26. Loop Optimizations`, path: `02_loop_optimizations/README.md`, dir: `02_loop_optimizations`, body: `<h1 id="02--loop-optimizations">02 — Loop Optimizations</h1>
+  { name: `26. Loop Optimizations`, path: `02_loop_optimizations/README.md`, dir: `02_loop_optimizations`, words: 1702, mins: 9, body: `<h1 id="02--loop-optimizations">02 — Loop Optimizations</h1>
 <p>Loops are where programs spend their time, and where the optimizer earns its
 keep. This chapter walks through the loop transformations every serious
 performance engineer should be able to <em>recognize in assembly</em>.</p>
@@ -5065,17 +5630,27 @@ form</strong>:</p>
 <p>Key vocabulary:</p>
 <ul>
 <li><strong>Header</strong> — block that all loop paths flow through; phis live here.</li>
-<li><strong>Latch</strong> — block with the back-edge to the header. A <em>natural loop</em> has
-  exactly one.</li>
-<li><strong>Preheader</strong> — the single entry block that flows into the header from
+<li>
+<p><strong>Latch</strong> — block with the back-edge to the header. A <em>natural loop</em> has
+  exactly one.</p>
+</li>
+<li>
+<p><strong>Preheader</strong> — the single entry block that flows into the header from
   outside. Created on demand so that <em>hoisted</em> invariants have somewhere
-  to live.</li>
-<li><strong>Induction variable (IV)</strong> — a variable that monotonically changes each
-  iteration. Modeled by Scalar Evolution (SCEV) in LLVM.</li>
-<li><strong>Loop-invariant</strong> — an expression whose operands are defined outside the
-  loop and which has no side effects inside it.</li>
-<li><strong>Trip count</strong> — number of iterations. May be a constant, a parameter, or
-  symbolically described by SCEV.</li>
+  to live.</p>
+</li>
+<li>
+<p><strong>Induction variable (IV)</strong> — a variable that monotonically changes each
+  iteration. Modeled by Scalar Evolution (SCEV) in LLVM.</p>
+</li>
+<li>
+<p><strong>Loop-invariant</strong> — an expression whose operands are defined outside the
+  loop and which has no side effects inside it.</p>
+</li>
+<li>
+<p><strong>Trip count</strong> — number of iterations. May be a constant, a parameter, or
+  symbolically described by SCEV.</p>
+</li>
 </ul>
 <p>You can see all of these in any LLVM IR dump after <code>-loop-rotate</code> has run.</p>
 <hr />
@@ -5108,10 +5683,14 @@ form</strong>:</p>
 <h3 id="legality">Legality</h3>
 <ul>
 <li>The expression must be loop-invariant (no operand defined inside the loop).</li>
-<li>It must be <strong>safe to speculate</strong> — that is, executing it even when the loop
+<li>
+<p>It must be <strong>safe to speculate</strong> — that is, executing it even when the loop
   trips zero times must not crash or trap. <code>1 / x</code> is <em>not</em> speculatable
-  unless <code>x != 0</code> is proven. Loads from possibly-null pointers are not.</li>
-<li>It must not have observable side effects (no I/O, no atomics, etc.).</li>
+  unless <code>x != 0</code> is proven. Loads from possibly-null pointers are not.</p>
+</li>
+<li>
+<p>It must not have observable side effects (no I/O, no atomics, etc.).</p>
+</li>
 </ul>
 <h3 id="where-it-lives">Where it lives</h3>
 <ul>
@@ -5135,11 +5714,15 @@ instruction-level parallelism (ILP), better vectorization opportunities.</p>
 </code></pre>
 <h3 id="two-flavours">Two flavours</h3>
 <ol>
-<li><strong>Full unroll</strong> — when the trip count is a small known constant
-   (<code>for (i=0;i&lt;4;i++)</code>). The loop disappears entirely.</li>
-<li><strong>Partial unroll by N</strong> — replicate by N, keep a residual epilogue for
+<li>
+<p><strong>Full unroll</strong> — when the trip count is a small known constant
+   (<code>for (i=0;i&lt;4;i++)</code>). The loop disappears entirely.</p>
+</li>
+<li>
+<p><strong>Partial unroll by N</strong> — replicate by N, keep a residual epilogue for
    leftovers. N is chosen by a cost model based on the body size and the
-   target&rsquo;s pipeline.</li>
+   target&rsquo;s pipeline.</p>
+</li>
 </ol>
 <h3 id="cfg-before--after">CFG before / after</h3>
 <pre><code>   BEFORE                                AFTER N=4
@@ -5157,16 +5740,24 @@ instruction-level parallelism (ILP), better vectorization opportunities.</p>
 </code></pre>
 <h3 id="cost-model-knobs">Cost-model knobs</h3>
 <ul>
-<li>LLVM: <code>-funroll-loops</code>, <code>-mllvm -unroll-count=N</code>,
-  <code>#pragma clang loop unroll_count(4)</code>, <code>unroll(disable|enable|full)</code>.</li>
-<li>GCC: <code>-funroll-loops</code>, <code>-funroll-all-loops</code>, <code>--param max-unroll-times=N</code>,
-  <code>#pragma GCC unroll N</code>.</li>
+<li>
+<p>LLVM: <code>-funroll-loops</code>, <code>-mllvm -unroll-count=N</code>,
+  <code>#pragma clang loop unroll_count(4)</code>, <code>unroll(disable|enable|full)</code>.</p>
+</li>
+<li>
+<p>GCC: <code>-funroll-loops</code>, <code>-funroll-all-loops</code>, <code>--param max-unroll-times=N</code>,
+  <code>#pragma GCC unroll N</code>.</p>
+</li>
 </ul>
 <h3 id="pitfalls">Pitfalls</h3>
 <ul>
-<li>Unrolling <strong>without</strong> vectorization can hurt I-cache and increase
-  decode pressure.</li>
-<li>Don&rsquo;t unroll loops with unknown trip counts that average to 2 or 3.</li>
+<li>
+<p>Unrolling <strong>without</strong> vectorization can hurt I-cache and increase
+  decode pressure.</p>
+</li>
+<li>
+<p>Don&rsquo;t unroll loops with unknown trip counts that average to 2 or 3.</p>
+</li>
 </ul>
 <hr />
 <h2 id="03--loop-peeling">03 · Loop peeling</h2>
@@ -5366,7 +5957,7 @@ gcc   -O3 -fopt-info-loop \\
       -c 02_unroll.c -o /dev/null         # GCC's equivalent
 </code></pre>
 <p>➡ Next: <a href="../03_interprocedural/"><code>03_interprocedural/</code></a>.</p>` },
-  { name: `27. Interprocedural / Inlining`, path: `03_interprocedural/01_inlining.c`, dir: `03_interprocedural`, body: `<h1 id="01_inliningc">01_inlining.c</h1>
+  { name: `27. Interprocedural / Inlining`, path: `03_interprocedural/01_inlining.c`, dir: `03_interprocedural`, words: 813, mins: 4, body: `<h1 id="01_inliningc">01_inlining.c</h1>
 <pre><code class="language-c">/* 01_inlining.c — INLINING MECHANICS
  * ============================================================================
  *
@@ -5525,7 +6116,7 @@ int call_fact(void) {
 }
 
 </code></pre>` },
-  { name: `28. Interprocedural / Ipsccp`, path: `03_interprocedural/02_ipsccp.c`, dir: `03_interprocedural`, body: `<h1 id="02_ipsccpc">02_ipsccp.c</h1>
+  { name: `28. Interprocedural / Ipsccp`, path: `03_interprocedural/02_ipsccp.c`, dir: `03_interprocedural`, words: 360, mins: 2, body: `<h1 id="02_ipsccpc">02_ipsccp.c</h1>
 <pre><code class="language-c">/* 02_ipsccp.c — INTERPROCEDURAL SPARSE CONDITIONAL CONSTANT PROPAGATION
  * ============================================================================
  *
@@ -5593,7 +6184,7 @@ void caller_b(void) { helper(2, 1); }
 void caller_c(void) { helper(3, 1); }
 
 </code></pre>` },
-  { name: `29. Interprocedural / Arg Promotion`, path: `03_interprocedural/03_arg_promotion.c`, dir: `03_interprocedural`, body: `<h1 id="03_arg_promotionc">03_arg_promotion.c</h1>
+  { name: `29. Interprocedural / Arg Promotion`, path: `03_interprocedural/03_arg_promotion.c`, dir: `03_interprocedural`, words: 475, mins: 2, body: `<h1 id="03_arg_promotionc">03_arg_promotion.c</h1>
 <pre><code class="language-c">/* 03_arg_promotion.c — ARGUMENT PROMOTION (by-ref → by-val)
  * ============================================================================
  *
@@ -5685,7 +6276,7 @@ int caller_pair(int a, int b) {
 }
 
 </code></pre>` },
-  { name: `30. Interprocedural / Devirtualization`, path: `03_interprocedural/04_devirtualization.c`, dir: `03_interprocedural`, body: `<h1 id="04_devirtualizationc">04_devirtualization.c</h1>
+  { name: `30. Interprocedural / Devirtualization`, path: `03_interprocedural/04_devirtualization.c`, dir: `03_interprocedural`, words: 519, mins: 3, body: `<h1 id="04_devirtualizationc">04_devirtualization.c</h1>
 <pre><code class="language-c">/* 04_devirtualization.c — DEVIRTUALIZATION
  * ============================================================================
  *
@@ -5787,7 +6378,7 @@ void caller_dyn(const Op *op, int *a) {
 }
 
 </code></pre>` },
-  { name: `31. Interprocedural / Tail Call`, path: `03_interprocedural/05_tail_call.c`, dir: `03_interprocedural`, body: `<h1 id="05_tail_callc">05_tail_call.c</h1>
+  { name: `31. Interprocedural / Tail Call`, path: `03_interprocedural/05_tail_call.c`, dir: `03_interprocedural`, words: 627, mins: 3, body: `<h1 id="05_tail_callc">05_tail_call.c</h1>
 <pre><code class="language-c">/* 05_tail_call.c — TAIL CALL ELIMINATION (TCE / Sibling Calls)
  * ============================================================================
  *
@@ -5908,7 +6499,7 @@ int musttail_demo(int n, int acc) {
 #endif
 
 </code></pre>` },
-  { name: `32. Interprocedural / Attributes`, path: `03_interprocedural/06_attributes.c`, dir: `03_interprocedural`, body: `<h1 id="06_attributesc">06_attributes.c</h1>
+  { name: `32. Interprocedural / Attributes`, path: `03_interprocedural/06_attributes.c`, dir: `03_interprocedural`, words: 904, mins: 5, body: `<h1 id="06_attributesc">06_attributes.c</h1>
 <pre><code class="language-c">/* 06_attributes.c — FUNCTION ATTRIBUTES THE OPTIMIZER CARES ABOUT
  * ============================================================================
  *
@@ -6086,7 +6677,7 @@ void demo_avx2(int * restrict a, const int * restrict b, int n) {
 #endif
 
 </code></pre>` },
-  { name: `33. Interprocedural / Lto`, path: `03_interprocedural/07_lto.c`, dir: `03_interprocedural`, body: `<h1 id="07_ltoc">07_lto.c</h1>
+  { name: `33. Interprocedural / Lto`, path: `03_interprocedural/07_lto.c`, dir: `03_interprocedural`, words: 454, mins: 2, body: `<h1 id="07_ltoc">07_lto.c</h1>
 <pre><code class="language-c">/* 07_lto.c — LINK-TIME OPTIMIZATION (LTO / ThinLTO)
  * ============================================================================
  *
@@ -6166,7 +6757,7 @@ int add(int a, int b) {
 }
 
 </code></pre>` },
-  { name: `34. Interprocedural / Lto Mod`, path: `03_interprocedural/07_lto_mod.c`, dir: `03_interprocedural`, body: `<h1 id="07_lto_modc">07_lto_mod.c</h1>
+  { name: `34. Interprocedural / Lto Mod`, path: `03_interprocedural/07_lto_mod.c`, dir: `03_interprocedural`, words: 84, mins: 1, body: `<h1 id="07_lto_modc">07_lto_mod.c</h1>
 <pre><code class="language-c">/* 07_lto_mod.c — caller of \`add\` from 07_lto.c.
  *
  * See 07_lto.c for the full LTO walkthrough.
@@ -6191,7 +6782,7 @@ int callee_no_lto(void) {
 }
 
 </code></pre>` },
-  { name: `35. Interprocedural`, path: `03_interprocedural/README.md`, dir: `03_interprocedural`, body: `<h1 id="03--interprocedural-optimizations-ipo">03 — Interprocedural Optimizations (IPO)</h1>
+  { name: `35. Interprocedural`, path: `03_interprocedural/README.md`, dir: `03_interprocedural`, words: 1242, mins: 6, body: `<h1 id="03--interprocedural-optimizations-ipo">03 — Interprocedural Optimizations (IPO)</h1>
 <p>Local and loop optimizations look at one function at a time. <strong>IPO</strong> crosses
 function boundaries. The single most impactful interprocedural optimization
 is <strong>inlining</strong> — almost every other IPO derives its power from being able to
@@ -6387,10 +6978,14 @@ Aggregates inter-procedurally).</p>
 </code></pre>
 <p>Conditions:</p>
 <ul>
-<li>The compiler can prove (or assume, with <code>-fstrict-vtable-pointers</code>,
+<li>
+<p>The compiler can prove (or assume, with <code>-fstrict-vtable-pointers</code>,
   <code>final</code>, anonymous namespaces, <code>-fwhole-program</code>) that the dynamic type
-  is <code>D</code>.</li>
-<li>LTO greatly increases the surface where this fires.</li>
+  is <code>D</code>.</p>
+</li>
+<li>
+<p>LTO greatly increases the surface where this fires.</p>
+</li>
 </ul>
 <p>LLVM: <code>WholeProgramDevirtPass</code> (with LTO). GCC: <code>-fdevirtualize</code>,
 <code>-fdevirtualize-speculatively</code>, <code>ipa-devirt</code>.</p>
@@ -6410,10 +7005,14 @@ Both compilers also do <strong>sibling-call</strong> elimination across function
 compatible signatures.</p>
 <p>Caveats:</p>
 <ul>
-<li>Caller and callee ABI must allow it (matching argument shapes; no
-  stack-passed <code>va_args</code>; no destructors in scope in C++).</li>
-<li>The call must be the <em>last</em> thing the caller does <em>and</em> its return value
-  must flow directly to caller&rsquo;s return.</li>
+<li>
+<p>Caller and callee ABI must allow it (matching argument shapes; no
+  stack-passed <code>va_args</code>; no destructors in scope in C++).</p>
+</li>
+<li>
+<p>The call must be the <em>last</em> thing the caller does <em>and</em> its return value
+  must flow directly to caller&rsquo;s return.</p>
+</li>
 </ul>
 <h2 id="06--function-attributes-that-unlock-ipo">06 · Function attributes that unlock IPO</h2>
 <pre><code class="language-c">__attribute__((const))      // No memory reads, no side effects. Strongest.
@@ -6521,12 +7120,16 @@ gcc -O2 -flto 07_lto.o 07_lto_mod.o -o 07_lto.out
 <h3 id="pitfalls">Pitfalls</h3>
 <ul>
 <li>Static libraries must be built with the same LTO bytecode/IR version.</li>
-<li><code>__attribute__((used))</code> may be needed to keep symbols the linker
-  can&rsquo;t see referenced (e.g. resolved by <code>dlsym</code>).</li>
-<li>Debug-info quality with LTO is improving but still imperfect.</li>
+<li>
+<p><code>__attribute__((used))</code> may be needed to keep symbols the linker
+  can&rsquo;t see referenced (e.g. resolved by <code>dlsym</code>).</p>
+</li>
+<li>
+<p>Debug-info quality with LTO is improving but still imperfect.</p>
+</li>
 </ul>
 <p>➡ Next: <a href="../04_data_flow_analysis/"><code>04_data_flow_analysis/</code></a>.</p>` },
-  { name: `36. Data Flow Analysis / Reaching Definitions`, path: `04_data_flow_analysis/01_reaching_definitions.c`, dir: `04_data_flow_analysis`, body: `<h1 id="01_reaching_definitionsc">01_reaching_definitions.c</h1>
+  { name: `36. Data Flow Analysis / Reaching Definitions`, path: `04_data_flow_analysis/01_reaching_definitions.c`, dir: `04_data_flow_analysis`, words: 287, mins: 1, body: `<h1 id="01_reaching_definitionsc">01_reaching_definitions.c</h1>
 <pre><code class="language-c">/* 01_reaching_definitions.c — REACHING DEFINITIONS ANALYSIS
  * ============================================================================
  *
@@ -6584,7 +7187,7 @@ int reaches(int cond) {
 }
 
 </code></pre>` },
-  { name: `37. Data Flow Analysis / Live Variables`, path: `04_data_flow_analysis/02_live_variables.c`, dir: `04_data_flow_analysis`, body: `<h1 id="02_live_variablesc">02_live_variables.c</h1>
+  { name: `37. Data Flow Analysis / Live Variables`, path: `04_data_flow_analysis/02_live_variables.c`, dir: `04_data_flow_analysis`, words: 546, mins: 3, body: `<h1 id="02_live_variablesc">02_live_variables.c</h1>
 <pre><code class="language-c">/* 02_live_variables.c — LIVENESS ANALYSIS
  * ============================================================================
  *
@@ -6674,7 +7277,7 @@ int many_temps(int x, int y, int z) {
 }
 
 </code></pre>` },
-  { name: `38. Data Flow Analysis / Available Expressions`, path: `04_data_flow_analysis/03_available_expressions.c`, dir: `04_data_flow_analysis`, body: `<h1 id="03_available_expressionsc">03_available_expressions.c</h1>
+  { name: `38. Data Flow Analysis / Available Expressions`, path: `04_data_flow_analysis/03_available_expressions.c`, dir: `04_data_flow_analysis`, words: 472, mins: 2, body: `<h1 id="03_available_expressionsc">03_available_expressions.c</h1>
 <pre><code class="language-c">/* 03_available_expressions.c — AVAILABLE EXPRESSIONS ANALYSIS
  * ============================================================================
  *
@@ -6748,7 +7351,7 @@ int cse_blocked(int a, int b) {
 }
 
 </code></pre>` },
-  { name: `39. Data Flow Analysis / Very Busy Expressions`, path: `04_data_flow_analysis/04_very_busy_expressions.c`, dir: `04_data_flow_analysis`, body: `<h1 id="04_very_busy_expressionsc">04_very_busy_expressions.c</h1>
+  { name: `39. Data Flow Analysis / Very Busy Expressions`, path: `04_data_flow_analysis/04_very_busy_expressions.c`, dir: `04_data_flow_analysis`, words: 425, mins: 2, body: `<h1 id="04_very_busy_expressionsc">04_very_busy_expressions.c</h1>
 <pre><code class="language-c">/* 04_very_busy_expressions.c — VERY-BUSY-EXPRESSIONS ANALYSIS
  * ============================================================================
  *
@@ -6822,7 +7425,7 @@ int not_hoistable(int a, int b, int cond) {
 }
 
 </code></pre>` },
-  { name: `40. Data Flow Analysis / Dominators`, path: `04_data_flow_analysis/05_dominators.c`, dir: `04_data_flow_analysis`, body: `<h1 id="05_dominatorsc">05_dominators.c</h1>
+  { name: `40. Data Flow Analysis / Dominators`, path: `04_data_flow_analysis/05_dominators.c`, dir: `04_data_flow_analysis`, words: 366, mins: 2, body: `<h1 id="05_dominatorsc">05_dominators.c</h1>
 <pre><code class="language-c">/* 05_dominators.c — dominator-tree intuition in C
  *
  *           Entry (e)
@@ -6894,7 +7497,7 @@ int dom_demo(int cond, int x) {
 }
 
 </code></pre>` },
-  { name: `41. Data Flow Analysis / Constant Propagation`, path: `04_data_flow_analysis/06_constant_propagation.c`, dir: `04_data_flow_analysis`, body: `<h1 id="06_constant_propagationc">06_constant_propagation.c</h1>
+  { name: `41. Data Flow Analysis / Constant Propagation`, path: `04_data_flow_analysis/06_constant_propagation.c`, dir: `04_data_flow_analysis`, words: 315, mins: 2, body: `<h1 id="06_constant_propagationc">06_constant_propagation.c</h1>
 <pre><code class="language-c">/* 06_constant_propagation.c — constant-propagation lattice
  *
  * SCCP (Sparse Conditional Constant Propagation) tracks each SSA name's
@@ -6952,7 +7555,7 @@ int sccp_demo(void) {
 }
 
 </code></pre>` },
-  { name: `42. Data Flow Analysis`, path: `04_data_flow_analysis/README.md`, dir: `04_data_flow_analysis`, body: `<h1 id="04--data-flow-analysis">04 — Data-Flow Analysis</h1>
+  { name: `42. Data Flow Analysis`, path: `04_data_flow_analysis/README.md`, dir: `04_data_flow_analysis`, words: 1104, mins: 6, body: `<h1 id="04--data-flow-analysis">04 — Data-Flow Analysis</h1>
 <blockquote>
 <p>Optimizations are <em>transformations</em>. Data-flow analyses are the <em>evidence</em>
 they need before firing. This chapter gives you the four canonical
@@ -7013,10 +7616,14 @@ analyses, their lattices, and their direction.</p>
 <ul>
 <li><strong>Direction</strong>: forward = data flows from entry; backward = from exits.</li>
 <li><strong>Confluence operator at a join</strong>:</li>
-<li><strong>∪ (may)</strong> — value at the join = union of incoming sets.
-    &ldquo;Property X <em>may</em> hold here.&rdquo;</li>
-<li><strong>∩ (must)</strong> — value at the join = intersection of incoming sets.
-    &ldquo;Property X <em>must</em> hold here.&rdquo;</li>
+<li>
+<p><strong>∪ (may)</strong> — value at the join = union of incoming sets.
+    &ldquo;Property X <em>may</em> hold here.&rdquo;</p>
+</li>
+<li>
+<p><strong>∩ (must)</strong> — value at the join = intersection of incoming sets.
+    &ldquo;Property X <em>must</em> hold here.&rdquo;</p>
+</li>
 </ul>
 <p>Each analysis is solved by a <strong>fixed-point iteration</strong> on the CFG:</p>
 <pre><code>   for each block B:  IN[B] = initial
@@ -7133,13 +7740,19 @@ The <strong>dominator tree</strong> has every node&rsquo;s parent = idom.</p>
                 ┌─┼─┐
                 B C D
 </code></pre>
-<p><strong>Used by</strong>:
-- SSA construction (φ-placement uses <em>dominance frontier</em>)
-- LICM (only hoist out of a loop into its preheader — the preheader
-  dominates the header)
-- Loop detection (a back-edge is one whose target dominates the source)
-- Speculative execution (a side-effect can be hoisted iff its new location
-  dominates all its former uses)</p>
+<p><strong>Used by</strong>:</p>
+<ul>
+<li>SSA construction (φ-placement uses <em>dominance frontier</em>)</li>
+<li>
+<p>LICM (only hoist out of a loop into its preheader — the preheader
+  dominates the header)</p>
+</li>
+<li>
+<p>Loop detection (a back-edge is one whose target dominates the source)</p>
+</li>
+<li>Speculative execution (a side-effect can be hoisted iff its new location
+  dominates all its former uses)</li>
+</ul>
 <p><strong>Post-dominators</strong> are the dual: A <em>post-dominates</em> B if every path from B
 to exit passes through A. Used by code sinking.</p>
 <h2 id="6-the-lattice-picture">6. The lattice picture</h2>
@@ -7162,10 +7775,12 @@ encodes &ldquo;how much do we know?&rdquo;:</p>
               ╲       ╱
                   ⊥        ← &quot;not a constant&quot; (could be anything)
 </code></pre>
-<p>The meet operator on this lattice is:
-- meet(⊤, x) = x
-- meet(x, x) = x
-- meet(x, y) = ⊥ if x ≠ y, where ⊤ ≠ x ≠ ⊥</p>
+<p>The meet operator on this lattice is:</p>
+<ul>
+<li>meet(⊤, x) = x</li>
+<li>meet(x, x) = x</li>
+<li>meet(x, y) = ⊥ if x ≠ y, where ⊤ ≠ x ≠ ⊥</li>
+</ul>
 <p>This is why SCCP is &ldquo;sparse&rdquo; and &ldquo;conditional&rdquo;: it walks SSA edges, not the
 entire CFG, and it tracks which CFG edges are <em>executable</em> — making it more
 precise than naïve constant propagation.</p>
@@ -7196,7 +7811,7 @@ clang -O0 -Xclang -disable-O0-optnone -S -emit-llvm 01_reaching_definitions.c \\
     -o 01_reaching_definitions.O0.ll
 </code></pre>
 <p>➡ Next: <a href="../05_control_flow/"><code>05_control_flow/</code></a>.</p>` },
-  { name: `43. Control Flow / Jump Threading`, path: `05_control_flow/01_jump_threading.c`, dir: `05_control_flow`, body: `<h1 id="01_jump_threadingc">01_jump_threading.c</h1>
+  { name: `43. Control Flow / Jump Threading`, path: `05_control_flow/01_jump_threading.c`, dir: `05_control_flow`, words: 516, mins: 3, body: `<h1 id="01_jump_threadingc">01_jump_threading.c</h1>
 <pre><code class="language-c">/* 01_jump_threading.c — JUMP THREADING
  * ============================================================================
  *
@@ -7298,7 +7913,7 @@ int threadable_phi(int x, int y) {
 }
 
 </code></pre>` },
-  { name: `44. Control Flow / Cfg Simplification`, path: `05_control_flow/02_cfg_simplification.c`, dir: `05_control_flow`, body: `<h1 id="02_cfg_simplificationc">02_cfg_simplification.c</h1>
+  { name: `44. Control Flow / Cfg Simplification`, path: `05_control_flow/02_cfg_simplification.c`, dir: `05_control_flow`, words: 533, mins: 3, body: `<h1 id="02_cfg_simplificationc">02_cfg_simplification.c</h1>
 <pre><code class="language-c">/* 02_cfg_simplification.c — SIMPLIFYCFG
  * ============================================================================
  *
@@ -7407,7 +8022,7 @@ int hoist_common(int cond) {
 }
 
 </code></pre>` },
-  { name: `45. Control Flow / If Conversion`, path: `05_control_flow/03_if_conversion.c`, dir: `05_control_flow`, body: `<h1 id="03_if_conversionc">03_if_conversion.c</h1>
+  { name: `45. Control Flow / If Conversion`, path: `05_control_flow/03_if_conversion.c`, dir: `05_control_flow`, words: 657, mins: 3, body: `<h1 id="03_if_conversionc">03_if_conversion.c</h1>
 <pre><code class="language-c">/* 03_if_conversion.c — IF-CONVERSION (branch → select / cmov)
  * ============================================================================
  *
@@ -7532,7 +8147,7 @@ void cond_inside_loop(int *a, int n) {
 }
 
 </code></pre>` },
-  { name: `46. Control Flow / Tail Call`, path: `05_control_flow/04_tail_call.c`, dir: `05_control_flow`, body: `<h1 id="04_tail_callc">04_tail_call.c</h1>
+  { name: `46. Control Flow / Tail Call`, path: `05_control_flow/04_tail_call.c`, dir: `05_control_flow`, words: 420, mins: 2, body: `<h1 id="04_tail_callc">04_tail_call.c</h1>
 <pre><code class="language-c">/* 04_tail_call.c — TAIL CALL FROM THE CONTROL-FLOW SIDE
  * ============================================================================
  *
@@ -7617,7 +8232,7 @@ int g(int x) {
 }
 
 </code></pre>` },
-  { name: `47. Control Flow / Switch Lowering`, path: `05_control_flow/05_switch_lowering.c`, dir: `05_control_flow`, body: `<h1 id="05_switch_loweringc">05_switch_lowering.c</h1>
+  { name: `47. Control Flow / Switch Lowering`, path: `05_control_flow/05_switch_lowering.c`, dir: `05_control_flow`, words: 807, mins: 4, body: `<h1 id="05_switch_loweringc">05_switch_lowering.c</h1>
 <pre><code class="language-c">/* 05_switch_lowering.c — SWITCH LOWERING STRATEGIES
  * ============================================================================
  *
@@ -7782,7 +8397,7 @@ int is_punctuation(char c) {
 }
 
 </code></pre>` },
-  { name: `48. Control Flow / Block Placement`, path: `05_control_flow/06_block_placement.c`, dir: `05_control_flow`, body: `<h1 id="06_block_placementc">06_block_placement.c</h1>
+  { name: `48. Control Flow / Block Placement`, path: `05_control_flow/06_block_placement.c`, dir: `05_control_flow`, words: 584, mins: 3, body: `<h1 id="06_block_placementc">06_block_placement.c</h1>
 <pre><code class="language-c">/* 06_block_placement.c — HOT / COLD CODE LAYOUT
  * ============================================================================
  *
@@ -7907,7 +8522,7 @@ __attribute__((hot)) void mainloop(int x) {
 }
 
 </code></pre>` },
-  { name: `49. Control Flow / Loop Rotation`, path: `05_control_flow/07_loop_rotation.c`, dir: `05_control_flow`, body: `<h1 id="07_loop_rotationc">07_loop_rotation.c</h1>
+  { name: `49. Control Flow / Loop Rotation`, path: `05_control_flow/07_loop_rotation.c`, dir: `05_control_flow`, words: 435, mins: 2, body: `<h1 id="07_loop_rotationc">07_loop_rotation.c</h1>
 <pre><code class="language-c">/* 07_loop_rotation.c — LOOP ROTATION
  * ============================================================================
  *
@@ -7992,7 +8607,7 @@ void rotateable(int *a, int n) {
 }
 
 </code></pre>` },
-  { name: `50. Control Flow / Branch Folding`, path: `05_control_flow/08_branch_folding.c`, dir: `05_control_flow`, body: `<h1 id="08_branch_foldingc">08_branch_folding.c</h1>
+  { name: `50. Control Flow / Branch Folding`, path: `05_control_flow/08_branch_folding.c`, dir: `05_control_flow`, words: 428, mins: 2, body: `<h1 id="08_branch_foldingc">08_branch_folding.c</h1>
 <pre><code class="language-c">/* 08_branch_folding.c — COMMON TAIL FOLDING (cross-jumping)
  * ============================================================================
  *
@@ -8082,7 +8697,7 @@ int fold_me(int cond, int a, int b) {
 }
 
 </code></pre>` },
-  { name: `51. Control Flow`, path: `05_control_flow/README.md`, dir: `05_control_flow`, body: `<h1 id="05--control-flow-optimizations">05 — Control-Flow Optimizations</h1>
+  { name: `51. Control Flow`, path: `05_control_flow/README.md`, dir: `05_control_flow`, words: 966, mins: 5, body: `<h1 id="05--control-flow-optimizations">05 — Control-Flow Optimizations</h1>
 <p>CFG-shaping passes restructure branches, merges, and calls so that the
 backend has the smallest, fastest, and most predictable control flow
 possible. They almost always run <em>together with</em> SimplifyCFG to clean up
@@ -8212,9 +8827,13 @@ sequence, removing the branch entirely.</p>
 </ul>
 <p>When it <em>hurts</em>:</p>
 <ul>
-<li>The branch is predictable (e.g. always taken) — <code>cmov</code> forces both
-  computations.</li>
-<li>One side is much more expensive than the other.</li>
+<li>
+<p>The branch is predictable (e.g. always taken) — <code>cmov</code> forces both
+  computations.</p>
+</li>
+<li>
+<p>One side is much more expensive than the other.</p>
+</li>
 </ul>
 <p>LLVM passes: <code>SelectOptimize</code>, <code>EarlyIfConversion</code> (in the backend), and
 the SimplifyCFG fold mentioned above.</p>
@@ -8254,11 +8873,15 @@ one of several shapes depending on the case density and target ISA:</p>
 </code></pre>
 <p>Other shapes:</p>
 <ul>
-<li><strong>Range tests</strong> (bit-test): for case sets like {3, 7, 9, 12} the backend
-  may emit <code>bt mask, x ; jc target</code>.</li>
-<li><strong><code>switch</code> → arithmetic</strong>: for a switch that returns one of a few constants,
+<li>
+<p><strong>Range tests</strong> (bit-test): for case sets like {3, 7, 9, 12} the backend
+  may emit <code>bt mask, x ; jc target</code>.</p>
+</li>
+<li>
+<p><strong><code>switch</code> → arithmetic</strong>: for a switch that returns one of a few constants,
   the backend can compute the result without branching at all
-  (<code>return arr[x]</code> or <code>return (x==0)*3 + (x==1)*7 + …</code>).</li>
+  (<code>return arr[x]</code> or <code>return (x==0)*3 + (x==1)*7 + …</code>).</p>
+</li>
 </ul>
 <p>LLVM: <code>SwitchInstr</code> lowering in <code>CodeGen</code>. GCC: <code>tree-switch-conversion</code>.</p>
 <h2 id="06--block-placement">06 · Block placement</h2>
@@ -8310,7 +8933,7 @@ both predecessors branch to the same shared epilogue.</p>
 </code></pre>
 <p>LLVM: <code>BranchFolding</code>. GCC: in cfgcleanup.</p>
 <p>➡ Next: <a href="../06_memory_optimizations/"><code>06_memory_optimizations/</code></a>.</p>` },
-  { name: `52. Memory Optimizations / Mem2Reg`, path: `06_memory_optimizations/01_mem2reg.c`, dir: `06_memory_optimizations`, body: `<h1 id="01_mem2regc">01_mem2reg.c</h1>
+  { name: `52. Memory Optimizations / Mem2Reg`, path: `06_memory_optimizations/01_mem2reg.c`, dir: `06_memory_optimizations`, words: 574, mins: 3, body: `<h1 id="01_mem2regc">01_mem2reg.c</h1>
 <pre><code class="language-c">/* 01_mem2reg.c — PROMOTE ALLOCAS TO SSA REGISTERS
  * ============================================================================
  *
@@ -8410,7 +9033,7 @@ int does_not_promote(int i) {
 }
 
 </code></pre>` },
-  { name: `53. Memory Optimizations / Sroa`, path: `06_memory_optimizations/02_sroa.c`, dir: `06_memory_optimizations`, body: `<h1 id="02_sroac">02_sroa.c</h1>
+  { name: `53. Memory Optimizations / Sroa`, path: `06_memory_optimizations/02_sroa.c`, dir: `06_memory_optimizations`, words: 716, mins: 4, body: `<h1 id="02_sroac">02_sroa.c</h1>
 <pre><code class="language-c">/* 02_sroa.c — SCALAR REPLACEMENT OF AGGREGATES
  * ============================================================================
  *
@@ -8530,7 +9153,7 @@ int sroa_blocked(int a, int b, int c) {
 }
 
 </code></pre>` },
-  { name: `54. Memory Optimizations / Alias Analysis`, path: `06_memory_optimizations/03_alias_analysis.c`, dir: `06_memory_optimizations`, body: `<h1 id="03_alias_analysisc">03_alias_analysis.c</h1>
+  { name: `54. Memory Optimizations / Alias Analysis`, path: `06_memory_optimizations/03_alias_analysis.c`, dir: `06_memory_optimizations`, words: 697, mins: 3, body: `<h1 id="03_alias_analysisc">03_alias_analysis.c</h1>
 <pre><code class="language-c">/* 03_alias_analysis.c — ALIAS ANALYSIS FROM THE USER'S SIDE
  * ============================================================================
  *
@@ -8651,7 +9274,7 @@ float good_type_pun(int *p) {
 }
 
 </code></pre>` },
-  { name: `55. Memory Optimizations / Store To Load`, path: `06_memory_optimizations/04_store_to_load.c`, dir: `06_memory_optimizations`, body: `<h1 id="04_store_to_loadc">04_store_to_load.c</h1>
+  { name: `55. Memory Optimizations / Store To Load`, path: `06_memory_optimizations/04_store_to_load.c`, dir: `06_memory_optimizations`, words: 568, mins: 3, body: `<h1 id="04_store_to_loadc">04_store_to_load.c</h1>
 <pre><code class="language-c">/* 04_store_to_load.c — STORE-TO-LOAD FORWARDING
  * ============================================================================
  *
@@ -8761,7 +9384,7 @@ int blocked(int *p, int v) {
 }
 
 </code></pre>` },
-  { name: `56. Memory Optimizations / Gvn`, path: `06_memory_optimizations/05_gvn.c`, dir: `06_memory_optimizations`, body: `<h1 id="05_gvnc">05_gvn.c</h1>
+  { name: `56. Memory Optimizations / Gvn`, path: `06_memory_optimizations/05_gvn.c`, dir: `06_memory_optimizations`, words: 422, mins: 2, body: `<h1 id="05_gvnc">05_gvn.c</h1>
 <pre><code class="language-c">/* 05_gvn.c — GLOBAL VALUE NUMBERING
  * ============================================================================
  *
@@ -8835,7 +9458,7 @@ int gvn_through_phi(int *p, int cond, int v) {
 }
 
 </code></pre>` },
-  { name: `57. Memory Optimizations / Dead Store Elim`, path: `06_memory_optimizations/06_dead_store_elim.c`, dir: `06_memory_optimizations`, body: `<h1 id="06_dead_store_elimc">06_dead_store_elim.c</h1>
+  { name: `57. Memory Optimizations / Dead Store Elim`, path: `06_memory_optimizations/06_dead_store_elim.c`, dir: `06_memory_optimizations`, words: 496, mins: 2, body: `<h1 id="06_dead_store_elimc">06_dead_store_elim.c</h1>
 <pre><code class="language-c">/* 06_dead_store_elim.c — DEAD STORE ELIMINATION (DSE)
  * ============================================================================
  *
@@ -8935,7 +9558,7 @@ void dead_locally(void) {
 }
 
 </code></pre>` },
-  { name: `58. Memory Optimizations / Memcpy Opt`, path: `06_memory_optimizations/07_memcpy_opt.c`, dir: `06_memory_optimizations`, body: `<h1 id="07_memcpy_optc">07_memcpy_opt.c</h1>
+  { name: `58. Memory Optimizations / Memcpy Opt`, path: `06_memory_optimizations/07_memcpy_opt.c`, dir: `06_memory_optimizations`, words: 642, mins: 3, body: `<h1 id="07_memcpy_optc">07_memcpy_opt.c</h1>
 <pre><code class="language-c">/* 07_memcpy_opt.c — MEMCPY OPTIMIZATION
  * ============================================================================
  *
@@ -9048,7 +9671,7 @@ void chain(char *p) {
 }
 
 </code></pre>` },
-  { name: `59. Memory Optimizations / Escape Analysis`, path: `06_memory_optimizations/08_escape_analysis.c`, dir: `06_memory_optimizations`, body: `<h1 id="08_escape_analysisc">08_escape_analysis.c</h1>
+  { name: `59. Memory Optimizations / Escape Analysis`, path: `06_memory_optimizations/08_escape_analysis.c`, dir: `06_memory_optimizations`, words: 626, mins: 3, body: `<h1 id="08_escape_analysisc">08_escape_analysis.c</h1>
 <pre><code class="language-c">/* 08_escape_analysis.c — ESCAPE ANALYSIS
  * ============================================================================
  *
@@ -9174,7 +9797,7 @@ void escape_callback(int v) {
 }
 
 </code></pre>` },
-  { name: `60. Memory Optimizations / Load Widening`, path: `06_memory_optimizations/09_load_widening.c`, dir: `06_memory_optimizations`, body: `<h1 id="09_load_wideningc">09_load_widening.c</h1>
+  { name: `60. Memory Optimizations / Load Widening`, path: `06_memory_optimizations/09_load_widening.c`, dir: `06_memory_optimizations`, words: 725, mins: 4, body: `<h1 id="09_load_wideningc">09_load_widening.c</h1>
 <pre><code class="language-c">/* 09_load_widening.c — LOAD / STORE WIDENING
  * ============================================================================
  *
@@ -9304,7 +9927,7 @@ void slp_restrict(float * restrict a, const float * restrict b, const float * re
 }
 
 </code></pre>` },
-  { name: `61. Memory Optimizations`, path: `06_memory_optimizations/README.md`, dir: `06_memory_optimizations`, body: `<h1 id="06--memory-optimizations">06 — Memory Optimizations</h1>
+  { name: `61. Memory Optimizations`, path: `06_memory_optimizations/README.md`, dir: `06_memory_optimizations`, words: 1051, mins: 5, body: `<h1 id="06--memory-optimizations">06 — Memory Optimizations</h1>
 <p>Memory is the bottleneck of modern systems, and the optimizer&rsquo;s <em>single
 biggest job</em> on real programs is <strong>getting things out of memory and into
 registers</strong>, or, failing that, <strong>doing fewer loads and stores</strong>.</p>
@@ -9550,7 +10173,7 @@ the libc allocator and that <code>free</code> matches. In C++ it&rsquo;s more po
 <p>… and <code>p</code> is 4-byte aligned, the loop vectorizer can widen this to one
 128-bit load and a horizontal reduction. See chapter 08.</p>
 <p>➡ Next: <a href="../07_ssa_form/"><code>07_ssa_form/</code></a>.</p>` },
-  { name: `62. Ssa Form / Ssa Intro`, path: `07_ssa_form/01_ssa_intro.c`, dir: `07_ssa_form`, body: `<h1 id="01_ssa_introc">01_ssa_intro.c</h1>
+  { name: `62. Ssa Form / Ssa Intro`, path: `07_ssa_form/01_ssa_intro.c`, dir: `07_ssa_form`, words: 245, mins: 1, body: `<h1 id="01_ssa_introc">01_ssa_intro.c</h1>
 <pre><code class="language-c">/* 01_ssa_intro.c — minimal programs that produce a φ-node
  *
  * \`pick\` at -O1 keeps a phi. At -O3 the SimplifyCFG pass converts the
@@ -9592,7 +10215,7 @@ int running_sum(const int *a, size_t n) {
 }
 
 </code></pre>` },
-  { name: `63. Ssa Form / Dominance Frontier`, path: `07_ssa_form/02_dominance_frontier.c`, dir: `07_ssa_form`, body: `<h1 id="02_dominance_frontierc">02_dominance_frontier.c</h1>
+  { name: `63. Ssa Form / Dominance Frontier`, path: `07_ssa_form/02_dominance_frontier.c`, dir: `07_ssa_form`, words: 280, mins: 1, body: `<h1 id="02_dominance_frontierc">02_dominance_frontier.c</h1>
 <pre><code class="language-c">/* 02_dominance_frontier.c — picture of dominance frontier
  *
  *      Entry
@@ -9646,7 +10269,7 @@ int df_demo(int cond) {
 }
 
 </code></pre>` },
-  { name: `64. Ssa Form / Phi Placement`, path: `07_ssa_form/03_phi_placement.c`, dir: `07_ssa_form`, body: `<h1 id="03_phi_placementc">03_phi_placement.c</h1>
+  { name: `64. Ssa Form / Phi Placement`, path: `07_ssa_form/03_phi_placement.c`, dir: `07_ssa_form`, words: 472, mins: 2, body: `<h1 id="03_phi_placementc">03_phi_placement.c</h1>
 <pre><code class="language-c">/* 03_phi_placement.c — multiple variables, nested if's, transitive φ insertion
  *
  * Trace the Cytron algorithm by hand:
@@ -9738,7 +10361,7 @@ int phi_demo(int c1, int c2) {
 }
 
 </code></pre>` },
-  { name: `65. Ssa Form / Memory Ssa`, path: `07_ssa_form/04_memory_ssa.c`, dir: `07_ssa_form`, body: `<h1 id="04_memory_ssac">04_memory_ssa.c</h1>
+  { name: `65. Ssa Form / Memory Ssa`, path: `07_ssa_form/04_memory_ssa.c`, dir: `07_ssa_form`, words: 304, mins: 2, body: `<h1 id="04_memory_ssac">04_memory_ssa.c</h1>
 <pre><code class="language-c">/* 04_memory_ssa.c — observing MemorySSA reasoning
  *
  * MemorySSA tracks an SSA-like chain of &quot;memory states&quot; so that loads and
@@ -9784,7 +10407,7 @@ int memssa_demo(int *p, int *q, int *r, int x, int y) {
 }
 
 </code></pre>` },
-  { name: `66. Ssa Form / Out Of Ssa`, path: `07_ssa_form/05_out_of_ssa.c`, dir: `07_ssa_form`, body: `<h1 id="05_out_of_ssac">05_out_of_ssa.c</h1>
+  { name: `66. Ssa Form / Out Of Ssa`, path: `07_ssa_form/05_out_of_ssa.c`, dir: `07_ssa_form`, words: 372, mins: 2, body: `<h1 id="05_out_of_ssac">05_out_of_ssa.c</h1>
 <pre><code class="language-c">/* 05_out_of_ssa.c — the swap problem
  *
  * Sometimes a loop produces a back-edge whose φs would, if naïvely
@@ -9847,7 +10470,7 @@ void reverse_array(int *a, int n) {
 }
 
 </code></pre>` },
-  { name: `67. Ssa Form`, path: `07_ssa_form/README.md`, dir: `07_ssa_form`, body: `<h1 id="07--static-single-assignment-ssa-form">07 — Static Single Assignment (SSA) Form</h1>
+  { name: `67. Ssa Form`, path: `07_ssa_form/README.md`, dir: `07_ssa_form`, words: 837, mins: 4, body: `<h1 id="07--static-single-assignment-ssa-form">07 — Static Single Assignment (SSA) Form</h1>
 <p>SSA is the <em>single most important</em> representational choice in modern
 compilers. Every later chapter assumes you can read it; this one shows you
 how it is built and what makes it tick.</p>
@@ -9971,12 +10594,18 @@ through B.</p>
 them back together.</p>
 <h2 id="pruned-semi-pruned-minimal--variants-of-ssa">Pruned, semi-pruned, minimal — variants of SSA</h2>
 <ul>
-<li><strong>Minimal SSA</strong>: place a φ at every dominance-frontier point of every def.
-  Often inserts redundant φs.</li>
-<li><strong>Semi-pruned</strong>: only insert φs for variables live across blocks. (default
-  in many textbooks.)</li>
-<li><strong>Pruned SSA</strong>: only insert a φ if the variable is live at the φ&rsquo;s block.
-  (LLVM uses this.)</li>
+<li>
+<p><strong>Minimal SSA</strong>: place a φ at every dominance-frontier point of every def.
+  Often inserts redundant φs.</p>
+</li>
+<li>
+<p><strong>Semi-pruned</strong>: only insert φs for variables live across blocks. (default
+  in many textbooks.)</p>
+</li>
+<li>
+<p><strong>Pruned SSA</strong>: only insert a φ if the variable is live at the φ&rsquo;s block.
+  (LLVM uses this.)</p>
+</li>
 </ul>
 <h2 id="memory-in-ssa--memoryssa">Memory in SSA — MemorySSA</h2>
 <p>Plain SSA only renames <em>scalars</em>. Memory operations (load/store) are not
@@ -10006,14 +10635,18 @@ copies:</p>
 </code></pre>
 <p>This is the <strong>swap problem</strong>. Solutions:</p>
 <ol>
-<li><strong>Critical-edge splitting</strong> — insert a new BB on every CFG edge with
+<li>
+<p><strong>Critical-edge splitting</strong> — insert a new BB on every CFG edge with
    multiple predecessors / successors, so the parallel copies become
-   sequential within one BB.</li>
-<li><strong>Coalescing-aware out-of-SSA</strong> (Sreedhar et al.) — emit a temporary
+   sequential within one BB.</p>
+</li>
+<li>
+<p><strong>Coalescing-aware out-of-SSA</strong> (Sreedhar et al.) — emit a temporary
    when needed:
    <code>t ← y
        x ← y
-       y ← t</code></li>
+       y ← t</code></p>
+</li>
 </ol>
 <p>LLVM does this in <code>PHIEliminationPass</code> + <code>MachineCopyPropagation</code>.</p>
 <h2 id="example-ssa_intro">Example: ssa_intro</h2>
@@ -10023,7 +10656,7 @@ and a memory-SSA scope. Dump it:</p>
 </code></pre>
 <p>Look for <code>phi i32 [%a, %entry], [%b, %then]</code> — that&rsquo;s the φ.</p>
 <p>➡ Next: <a href="../08_vectorization/"><code>08_vectorization/</code></a>.</p>` },
-  { name: `68. Vectorization / Loop Vec Basic`, path: `08_vectorization/01_loop_vec_basic.c`, dir: `08_vectorization`, body: `<h1 id="01_loop_vec_basicc">01_loop_vec_basic.c</h1>
+  { name: `68. Vectorization / Loop Vec Basic`, path: `08_vectorization/01_loop_vec_basic.c`, dir: `08_vectorization`, words: 705, mins: 4, body: `<h1 id="01_loop_vec_basicc">01_loop_vec_basic.c</h1>
 <pre><code class="language-c">/* 01_loop_vec_basic.c — AUTO-VECTORIZATION 101
  * ============================================================================
  *
@@ -10153,7 +10786,7 @@ void float_scale(float *a, float scale, size_t n) {
 }
 
 </code></pre>` },
-  { name: `69. Vectorization / Reduction`, path: `08_vectorization/02_reduction.c`, dir: `08_vectorization`, body: `<h1 id="02_reductionc">02_reduction.c</h1>
+  { name: `69. Vectorization / Reduction`, path: `08_vectorization/02_reduction.c`, dir: `08_vectorization`, words: 728, mins: 4, body: `<h1 id="02_reductionc">02_reduction.c</h1>
 <pre><code class="language-c">/* 02_reduction.c — REDUCTIONS (sum, max, hash)
  * ============================================================================
  *
@@ -10276,7 +10909,7 @@ uint32_t hash_djb2(const char *s, size_t n) {
 }
 
 </code></pre>` },
-  { name: `70. Vectorization / Slp`, path: `08_vectorization/03_slp.c`, dir: `08_vectorization`, body: `<h1 id="03_slpc">03_slp.c</h1>
+  { name: `70. Vectorization / Slp`, path: `08_vectorization/03_slp.c`, dir: `08_vectorization`, words: 562, mins: 3, body: `<h1 id="03_slpc">03_slp.c</h1>
 <pre><code class="language-c">/* 03_slp.c — STRAIGHT-LINE-CODE VECTORIZATION (SLP)
  * ============================================================================
  *
@@ -10385,7 +11018,7 @@ void scale4(float *a, float scale) {
 }
 
 </code></pre>` },
-  { name: `71. Vectorization / Masked`, path: `08_vectorization/04_masked.c`, dir: `08_vectorization`, body: `<h1 id="04_maskedc">04_masked.c</h1>
+  { name: `71. Vectorization / Masked`, path: `08_vectorization/04_masked.c`, dir: `08_vectorization`, words: 551, mins: 3, body: `<h1 id="04_maskedc">04_masked.c</h1>
 <pre><code class="language-c">/* 04_masked.c — MASKED VECTORIZATION (conditionals inside loop bodies)
  * ============================================================================
  *
@@ -10474,7 +11107,7 @@ void split(const float *in, float *pos, float *neg, size_t n) {
 }
 
 </code></pre>` },
-  { name: `72. Vectorization / Alignment`, path: `08_vectorization/05_alignment.c`, dir: `08_vectorization`, body: `<h1 id="05_alignmentc">05_alignment.c</h1>
+  { name: `72. Vectorization / Alignment`, path: `08_vectorization/05_alignment.c`, dir: `08_vectorization`, words: 548, mins: 3, body: `<h1 id="05_alignmentc">05_alignment.c</h1>
 <pre><code class="language-c">/* 05_alignment.c — ALIGNMENT, PEELING, AND RUNTIME CHECKS
  * ============================================================================
  *
@@ -10567,7 +11200,7 @@ float *make_aligned(size_t n) {
 }
 
 </code></pre>` },
-  { name: `73. Vectorization / Blockers`, path: `08_vectorization/06_blockers.c`, dir: `08_vectorization`, body: `<h1 id="06_blockersc">06_blockers.c</h1>
+  { name: `73. Vectorization / Blockers`, path: `08_vectorization/06_blockers.c`, dir: `08_vectorization`, words: 739, mins: 4, body: `<h1 id="06_blockersc">06_blockers.c</h1>
 <pre><code class="language-c">/* 06_blockers.c — WHAT STOPS THE VECTORIZER, AND HOW TO FIX IT
  * ============================================================================
  *
@@ -10694,7 +11327,7 @@ void math_in_body(float *a, size_t n) {
 }
 
 </code></pre>` },
-  { name: `74. Vectorization / Intrinsics`, path: `08_vectorization/07_intrinsics.c`, dir: `08_vectorization`, body: `<h1 id="07_intrinsicsc">07_intrinsics.c</h1>
+  { name: `74. Vectorization / Intrinsics`, path: `08_vectorization/07_intrinsics.c`, dir: `08_vectorization`, words: 445, mins: 2, body: `<h1 id="07_intrinsicsc">07_intrinsics.c</h1>
 <pre><code class="language-c">/* 07_intrinsics.c — hand-written vectors
  *
  * Two portable-ish ways to write vectors in pure C without target-specific
@@ -10774,7 +11407,7 @@ void v_axpy(v8i *out, const v8i *x, const v8i *y, size_t n) {
  * (with NEON) it's split across two 128-bit Q registers, etc. */
 
 </code></pre>` },
-  { name: `75. Vectorization / Pragmas`, path: `08_vectorization/08_pragmas.c`, dir: `08_vectorization`, body: `<h1 id="08_pragmasc">08_pragmas.c</h1>
+  { name: `75. Vectorization / Pragmas`, path: `08_vectorization/08_pragmas.c`, dir: `08_vectorization`, words: 400, mins: 2, body: `<h1 id="08_pragmasc">08_pragmas.c</h1>
 <pre><code class="language-c">/* 08_pragmas.c — pragmas that influence the vectorizer
  *
  * Use them when the compiler is being too conservative AND you have a
@@ -10846,7 +11479,7 @@ void scalar_only(int *a, const int *b, size_t n) {
 }
 
 </code></pre>` },
-  { name: `76. Vectorization`, path: `08_vectorization/README.md`, dir: `08_vectorization`, body: `<h1 id="08--vectorization">08 — Vectorization</h1>
+  { name: `76. Vectorization`, path: `08_vectorization/README.md`, dir: `08_vectorization`, words: 949, mins: 5, body: `<h1 id="08--vectorization">08 — Vectorization</h1>
 <blockquote>
 <p>&ldquo;If your hot loop isn&rsquo;t vectorized, you&rsquo;re leaving 4×, 8×, or 16× of the
 machine on the table.&rdquo;</p>
@@ -11031,15 +11664,19 @@ back to a select + blended store.</p>
 <p>When the compiler can&rsquo;t or won&rsquo;t, you can write vectors yourself. Two
 options:</p>
 <ol>
-<li><strong>GCC/Clang vector extensions</strong>:
+<li>
+<p><strong>GCC/Clang vector extensions</strong>:
    <code>c
    typedef int v8i __attribute__((vector_size(32)));   // 8×i32, AVX2 width
-   v8i sum(v8i a, v8i b) { return a + b; }              // pure C, lowered to vpaddd</code></li>
-<li><strong>ISA-specific intrinsics</strong>:
+   v8i sum(v8i a, v8i b) { return a + b; }              // pure C, lowered to vpaddd</code></p>
+</li>
+<li>
+<p><strong>ISA-specific intrinsics</strong>:
    <code>c
    #include &lt;immintrin.h&gt;
    __m256i s = _mm256_add_epi32(_mm256_loadu_si256(a),
-                                 _mm256_loadu_si256(b));</code></li>
+                                 _mm256_loadu_si256(b));</code></p>
+</li>
 </ol>
 <p>For portable code prefer (1) or <code>std::experimental::simd</code> (C++).
 Use (2) when you need exact instructions (e.g., <code>vpternlogd</code>, <code>vpdpbusd</code>).</p>
@@ -11072,7 +11709,7 @@ int *p = aligned_alloc(64, n * sizeof(int));
 }
 </code></pre>
 <p>➡ Next: <a href="../09_register_allocation/"><code>09_register_allocation/</code></a>.</p>` },
-  { name: `77. Register Allocation / Live Ranges`, path: `09_register_allocation/01_live_ranges.c`, dir: `09_register_allocation`, body: `<h1 id="01_live_rangesc">01_live_ranges.c</h1>
+  { name: `77. Register Allocation / Live Ranges`, path: `09_register_allocation/01_live_ranges.c`, dir: `09_register_allocation`, words: 621, mins: 3, body: `<h1 id="01_live_rangesc">01_live_ranges.c</h1>
 <pre><code class="language-c">/* 01_live_ranges.c — LIVE RANGES &amp; INTERFERENCE
  * ============================================================================
  *
@@ -11168,7 +11805,7 @@ int wide_pressure(int x) {
 }
 
 </code></pre>` },
-  { name: `78. Register Allocation / Pressure`, path: `09_register_allocation/02_pressure.c`, dir: `09_register_allocation`, body: `<h1 id="02_pressurec">02_pressure.c</h1>
+  { name: `78. Register Allocation / Pressure`, path: `09_register_allocation/02_pressure.c`, dir: `09_register_allocation`, words: 439, mins: 2, body: `<h1 id="02_pressurec">02_pressure.c</h1>
 <pre><code class="language-c">/* 02_pressure.c — pushing the register allocator past its limit
  *
  * Compile with -m32 (if available) to make spills more likely.
@@ -11240,7 +11877,7 @@ int interleave(const int *a, const int *b, int n) {
 }
 
 </code></pre>` },
-  { name: `79. Register Allocation / Coalescing`, path: `09_register_allocation/03_coalescing.c`, dir: `09_register_allocation`, body: `<h1 id="03_coalescingc">03_coalescing.c</h1>
+  { name: `79. Register Allocation / Coalescing`, path: `09_register_allocation/03_coalescing.c`, dir: `09_register_allocation`, words: 367, mins: 2, body: `<h1 id="03_coalescingc">03_coalescing.c</h1>
 <pre><code class="language-c">/* 03_coalescing.c — copy coalescing
  *
  * When the allocator sees \`vreg_b = mov vreg_a\` and the two vregs DON'T
@@ -11313,7 +11950,7 @@ int not_coalescable(int x) {
 }
 
 </code></pre>` },
-  { name: `80. Register Allocation / Calling Conv`, path: `09_register_allocation/04_calling_conv.c`, dir: `09_register_allocation`, body: `<h1 id="04_calling_convc">04_calling_conv.c</h1>
+  { name: `80. Register Allocation / Calling Conv`, path: `09_register_allocation/04_calling_conv.c`, dir: `09_register_allocation`, words: 414, mins: 2, body: `<h1 id="04_calling_convc">04_calling_conv.c</h1>
 <pre><code class="language-c">/* 04_calling_conv.c — interaction of calling convention with allocation
  *
  * A value live across a call must be in a callee-saved register (which the
@@ -11384,7 +12021,7 @@ int after_call(int x) {
 }
 
 </code></pre>` },
-  { name: `81. Register Allocation / Inline Asm`, path: `09_register_allocation/05_inline_asm.c`, dir: `09_register_allocation`, body: `<h1 id="05_inline_asmc">05_inline_asm.c</h1>
+  { name: `81. Register Allocation / Inline Asm`, path: `09_register_allocation/05_inline_asm.c`, dir: `09_register_allocation`, words: 383, mins: 2, body: `<h1 id="05_inline_asmc">05_inline_asm.c</h1>
 <pre><code class="language-c">/* 05_inline_asm.c — talking to the register allocator with constraints
  *
  * Inline asm gives you exact instruction control while still letting the
@@ -11456,7 +12093,7 @@ int demo(int x) { return x + 1; }
 #endif
 
 </code></pre>` },
-  { name: `82. Register Allocation`, path: `09_register_allocation/README.md`, dir: `09_register_allocation`, body: `<h1 id="09--register-allocation">09 — Register Allocation</h1>
+  { name: `82. Register Allocation`, path: `09_register_allocation/README.md`, dir: `09_register_allocation`, words: 842, mins: 4, body: `<h1 id="09--register-allocation">09 — Register Allocation</h1>
 <p>After mid-end optimizations the IR is still in <strong>SSA</strong> with a potentially
 unbounded number of names. The <strong>backend</strong> must map those names to a
 fixed set of <strong>physical registers</strong> (e.g. 16 GPRs on x86-64, 32 on ARM64),
@@ -11504,11 +12141,17 @@ allocator</em>.</p>
 <li><strong>Virtual register (vreg)</strong>: an SSA name in machine IR. Unlimited.</li>
 <li><strong>Physical register (preg)</strong>: an actual ISA register. Fixed.</li>
 <li><strong>Live range of vreg v</strong>: the set of program points where v is live.</li>
-<li><strong>Interference</strong>: vregs v and w interfere if their live ranges overlap;
-  they then must be assigned to different pregs.</li>
-<li><strong>Spill</strong>: store a vreg to a stack slot because no preg is free at some
-  point in its live range.</li>
-<li><strong>Reload</strong>: load it back when next needed.</li>
+<li>
+<p><strong>Interference</strong>: vregs v and w interfere if their live ranges overlap;
+  they then must be assigned to different pregs.</p>
+</li>
+<li>
+<p><strong>Spill</strong>: store a vreg to a stack slot because no preg is free at some
+  point in its live range.</p>
+</li>
+<li>
+<p><strong>Reload</strong>: load it back when next needed.</p>
+</li>
 <li><strong>Coalesce</strong>: merge two vregs related by a <code>mov</code> into one, so the <code>mov</code>
   disappears.</li>
 </ul>
@@ -11562,13 +12205,19 @@ Cons: occasional poor decisions for very long-lived vregs.</p>
 <ol>
 <li><strong>Keep live ranges short.</strong> Don&rsquo;t compute something far before its use.</li>
 <li><strong>Avoid deep expression trees</strong> with many simultaneously-live temporaries.</li>
-<li><strong>Hint the calling convention</strong> with <code>__attribute__((regcall))</code> /
+<li>
+<p><strong>Hint the calling convention</strong> with <code>__attribute__((regcall))</code> /
    <code>[[clang::regcall]]</code> on x86 if you want more registers used for
-   parameters (and have an LTO build).</li>
-<li><strong>Minimize call-clobbered values around calls.</strong> A value live across a
-   call must be in a callee-saved register or spilled.</li>
-<li><strong>Use <code>register</code> only for inline asm constraints</strong> (the keyword no longer
-   has meaning for allocation since C++17).</li>
+   parameters (and have an LTO build).</p>
+</li>
+<li>
+<p><strong>Minimize call-clobbered values around calls.</strong> A value live across a
+   call must be in a callee-saved register or spilled.</p>
+</li>
+<li>
+<p><strong>Use <code>register</code> only for inline asm constraints</strong> (the keyword no longer
+   has meaning for allocation since C++17).</p>
+</li>
 </ol>
 <h2 id="calling-conventions-cheat-sheet-x86-64-sysv">Calling conventions cheat sheet (x86-64 SysV)</h2>
 <pre><code>   Arguments:    RDI, RSI, RDX, RCX, R8, R9       (integer / pointer)
@@ -11668,7 +12317,7 @@ ls 02_pressure.c.*ira*
 clang -O3 -Rpass=regalloc -S 02_pressure.c -o /dev/null
 </code></pre>
 <p>➡ Next: <a href="../10_advanced/"><code>10_advanced/</code></a>.</p>` },
-  { name: `83. Advanced / Pgo Demo`, path: `10_advanced/01_pgo_demo.c`, dir: `10_advanced`, body: `<h1 id="01_pgo_democ">01_pgo_demo.c</h1>
+  { name: `83. Advanced / Pgo Demo`, path: `10_advanced/01_pgo_demo.c`, dir: `10_advanced`, words: 194, mins: 1, body: `<h1 id="01_pgo_democ">01_pgo_demo.c</h1>
 <pre><code class="language-c">/* 01_pgo_demo.c — minimal PGO demo
  *
  * Build (Clang):
@@ -11709,7 +12358,7 @@ int main(int argc, char **argv) {
 }
 
 </code></pre>` },
-  { name: `84. Advanced / Polly Demo`, path: `10_advanced/02_polly_demo.c`, dir: `10_advanced`, body: `<h1 id="02_polly_democ">02_polly_demo.c</h1>
+  { name: `84. Advanced / Polly Demo`, path: `10_advanced/02_polly_demo.c`, dir: `10_advanced`, words: 107, mins: 1, body: `<h1 id="02_polly_democ">02_polly_demo.c</h1>
 <pre><code class="language-c">/* 02_polly_demo.c — a polyhedral-friendly loop nest
  *
  * Try (Linux; needs an LLVM with Polly enabled):
@@ -11731,7 +12380,7 @@ void mm(double C[N][N], const double A[N][N], const double B[N][N]) {
 }
 
 </code></pre>` },
-  { name: `85. Advanced`, path: `10_advanced/README.md`, dir: `10_advanced`, body: `<h1 id="10--advanced-optimization-topics">10 — Advanced Optimization Topics</h1>
+  { name: `85. Advanced`, path: `10_advanced/README.md`, dir: `10_advanced`, words: 1068, mins: 5, body: `<h1 id="10--advanced-optimization-topics">10 — Advanced Optimization Topics</h1>
 <p>These are the topics that ship-quality compilers, browsers, kernels, and
 high-performance language runtimes get their last 5-30% from.</p>
 <h2 id="map">Map</h2>
@@ -11805,16 +12454,28 @@ high-performance language runtimes get their last 5-30% from.</p>
 </code></pre>
 <p>What PGO buys you:</p>
 <ul>
-<li><strong>Block placement</strong>: hot path is straight-line, cold path is in
-  <code>.text.unlikely</code>.</li>
-<li><strong>Inlining</strong>: hot, small callees are aggressively inlined; cold ones
-  are not.</li>
-<li><strong>Loop unroll</strong>: hot loops get unrolled more, cold loops not at all.</li>
-<li><strong>Switch lowering</strong>: hot cases get the fast path (e.g. fall-through
-  rather than table lookup).</li>
-<li><strong>Function ordering</strong>: hot functions cluster together in the binary →
-  better I-cache.</li>
-<li><strong>Builtin expect</strong>: replaced by actual measured probabilities.</li>
+<li>
+<p><strong>Block placement</strong>: hot path is straight-line, cold path is in
+  <code>.text.unlikely</code>.</p>
+</li>
+<li>
+<p><strong>Inlining</strong>: hot, small callees are aggressively inlined; cold ones
+  are not.</p>
+</li>
+<li>
+<p><strong>Loop unroll</strong>: hot loops get unrolled more, cold loops not at all.</p>
+</li>
+<li>
+<p><strong>Switch lowering</strong>: hot cases get the fast path (e.g. fall-through
+  rather than table lookup).</p>
+</li>
+<li>
+<p><strong>Function ordering</strong>: hot functions cluster together in the binary →
+  better I-cache.</p>
+</li>
+<li>
+<p><strong>Builtin expect</strong>: replaced by actual measured probabilities.</p>
+</li>
 </ul>
 <p>Typical speedup: 5-25% on real applications. For interpreters and
 parser-heavy code, sometimes &gt;40%.</p>
@@ -11898,12 +12559,18 @@ one, but cheaper.</p>
 </blockquote>
 <p>Examples:</p>
 <ul>
-<li><strong>Souper</strong> (LLVM IR): finds &ldquo;missed optimizations&rdquo; by running an SMT
-  solver against known-good rewrites.</li>
-<li><strong>Alive2</strong> (LLVM IR): verifies that an optimization is <em>correct</em> by
-  symbolic execution.</li>
-<li><strong>STOKE</strong> (x86 asm): stochastic super-optimizer; replaces a function with
-  a synthesized sequence that passes a million random tests.</li>
+<li>
+<p><strong>Souper</strong> (LLVM IR): finds &ldquo;missed optimizations&rdquo; by running an SMT
+  solver against known-good rewrites.</p>
+</li>
+<li>
+<p><strong>Alive2</strong> (LLVM IR): verifies that an optimization is <em>correct</em> by
+  symbolic execution.</p>
+</li>
+<li>
+<p><strong>STOKE</strong> (x86 asm): stochastic super-optimizer; replaces a function with
+  a synthesized sequence that passes a million random tests.</p>
+</li>
 </ul>
 <p>These tools are how the GCC and LLVM optimizer teams find new peephole
 rules and how they catch optimizer bugs.</p>
@@ -12000,7 +12667,7 @@ when looking at LLVM IR.</p>
 -fhardened (Clang)             ship-quality bundle of the above
 </code></pre>
 <p>➡ Next: <a href="../11_gcc_specific/"><code>11_gcc_specific/</code></a>.</p>` },
-  { name: `86. Gcc Specific`, path: `11_gcc_specific/README.md`, dir: `11_gcc_specific`, body: `<h1 id="11--gcc-specifics">11 — GCC Specifics</h1>
+  { name: `86. Gcc Specific`, path: `11_gcc_specific/README.md`, dir: `11_gcc_specific`, words: 743, mins: 4, body: `<h1 id="11--gcc-specifics">11 — GCC Specifics</h1>
 <p>A practical reference for the GCC pipeline: flags, dumps, plugins, and the
 order in which passes run.</p>
 <h2 id="1-the-optimization-levels">1. The optimization levels</h2>
@@ -12028,10 +12695,14 @@ gcc -Q -O3 --help=optimizers | head -60
 </code></pre>
 <ul>
 <li><strong>GENERIC</strong> = language-independent tree from the front-end. Briefly held.</li>
-<li><strong>GIMPLE</strong> = three-address SSA tree-level IR. ALL the mid-end passes
-  work here.</li>
-<li><strong>RTL</strong> = backend&rsquo;s instruction-selected, near-asm IR. Register
-  allocation and scheduling happen here.</li>
+<li>
+<p><strong>GIMPLE</strong> = three-address SSA tree-level IR. ALL the mid-end passes
+  work here.</p>
+</li>
+<li>
+<p><strong>RTL</strong> = backend&rsquo;s instruction-selected, near-asm IR. Register
+  allocation and scheduling happen here.</p>
+</li>
 </ul>
 <h2 id="3-dumping-every-pass">3. Dumping every pass</h2>
 <pre><code class="language-bash">gcc -O3 \\
@@ -12201,7 +12872,7 @@ vectorizer) and can examine or modify GIMPLE / RTL.</p>
    360r.final         Emit assembly
 </code></pre>
 <p>➡ Next: <a href="../12_llvm_specific/"><code>12_llvm_specific/</code></a>.</p>` },
-  { name: `87. Llvm Specific`, path: `12_llvm_specific/README.md`, dir: `12_llvm_specific`, body: `<h1 id="12--llvm-specifics">12 — LLVM Specifics</h1>
+  { name: `87. Llvm Specific`, path: `12_llvm_specific/README.md`, dir: `12_llvm_specific`, words: 714, mins: 4, body: `<h1 id="12--llvm-specifics">12 — LLVM Specifics</h1>
 <p>The same reference treatment for the LLVM/Clang side.</p>
 <h2 id="1-the-pipeline">1. The pipeline</h2>
 <pre><code>   source.{c,cpp}
@@ -12318,19 +12989,27 @@ compiler uses it for VRP, then drops the assumption.</p>
 <p>Recipe:</p>
 <ol>
 <li>Reproduce on the simplest possible C file.</li>
-<li>Dump IR at -O0 and -O3:
+<li>
+<p>Dump IR at -O0 and -O3:
    <code>bash
    clang -O0 -Xclang -disable-O0-optnone -S -emit-llvm file.c -o file.O0.ll
    opt -O3 file.O0.ll -S -o file.O3.ll
-   diff -u file.O0.ll file.O3.ll</code></li>
-<li>Find which pass <em>should</em> have fired:
+   diff -u file.O0.ll file.O3.ll</code></p>
+</li>
+<li>
+<p>Find which pass <em>should</em> have fired:
    <code>bash
-   opt -O3 -debug-pass-manager file.O0.ll -S -o /dev/null 2&gt;&amp;1 | less</code></li>
-<li>Run just that pass and confirm it didn&rsquo;t fire:
+   opt -O3 -debug-pass-manager file.O0.ll -S -o /dev/null 2&gt;&amp;1 | less</code></p>
+</li>
+<li>
+<p>Run just that pass and confirm it didn&rsquo;t fire:
    <code>bash
-   opt -p='function(licm)' file.O0.ll -S</code></li>
-<li>Often the answer is an attribute the front-end could have emitted but
-   didn&rsquo;t (<code>restrict</code> → <code>noalias</code>, <code>__attribute__((pure))</code> → <code>readonly</code>).</li>
+   opt -p='function(licm)' file.O0.ll -S</code></p>
+</li>
+<li>
+<p>Often the answer is an attribute the front-end could have emitted but
+   didn&rsquo;t (<code>restrict</code> → <code>noalias</code>, <code>__attribute__((pure))</code> → <code>readonly</code>).</p>
+</li>
 </ol>
 <h2 id="8-reading-llvm-ir-fluently">8. Reading LLVM IR fluently</h2>
 <pre><code class="language-llvm">; Function attributes
@@ -12345,17 +13024,23 @@ attributes #0 = { mustprogress nofree norecurse nosync nounwind
 </code></pre>
 <p>Tags to recognize:</p>
 <ul>
-<li><code>nsw</code> / <code>nuw</code>  — no signed / unsigned wrap (UB on overflow → enables
-  reassoc &amp; strength-reduce).</li>
-<li><code>inbounds</code>     — on <code>getelementptr</code>; the pointer arithmetic stays within
-  an allocated object.</li>
-<li><code>align N</code>      — operand alignment.</li>
+<li>
+<p><code>nsw</code> / <code>nuw</code>  — no signed / unsigned wrap (UB on overflow → enables
+  reassoc &amp; strength-reduce).</p>
+</li>
+<li>
+<p><code>inbounds</code>     — on <code>getelementptr</code>; the pointer arithmetic stays within
+  an allocated object.</p>
+</li>
+<li>
+<p><code>align N</code>      — operand alignment.</p>
+</li>
 <li><code>!tbaa !N</code>     — Type-Based Alias Analysis metadata.</li>
 <li><code>!noalias</code>     — region-scoped noalias (vector-vectorizer memcheck).</li>
 <li><code>tail</code>         — on <code>call</code>; allowed to TCE.</li>
 </ul>
 <p>➡ Next: <a href="../13_practical/"><code>13_practical/</code></a>.</p>` },
-  { name: `88. Practical`, path: `13_practical/README.md`, dir: `13_practical`, body: `<h1 id="13--practical-workflow--pitfalls">13 — Practical Workflow &amp; Pitfalls</h1>
+  { name: `88. Practical`, path: `13_practical/README.md`, dir: `13_practical`, words: 1155, mins: 6, body: `<h1 id="13--practical-workflow--pitfalls">13 — Practical Workflow &amp; Pitfalls</h1>
 <p>The previous chapters told you what the optimizer does. This chapter tells
 you how to <strong>work with it day-to-day</strong> — how to inspect, measure, and avoid
 the booby-traps.</p>
@@ -12528,46 +13213,72 @@ real inputs.</p>
 <h2 id="6-the-reading-order-for-mastery-recap">6. The &ldquo;Reading Order for Mastery&rdquo; recap</h2>
 <ol>
 <li>Re-read <a href="../00_fundamentals/"><code>00_fundamentals/</code></a>.</li>
-<li>Walk through the IR/asm for every example in <code>01_local_optimizations/</code>
-   until you can predict the output by inspection.</li>
-<li>Do the same for <code>02_loop_optimizations/</code> while staring at
-   <code>-Rpass=loop-vectorize</code> and <code>-fopt-info-vec</code> output.</li>
-<li>Reproduce the LTO demo in <code>03_interprocedural/07_lto.c</code>. Convince
+<li>
+<p>Walk through the IR/asm for every example in <code>01_local_optimizations/</code>
+   until you can predict the output by inspection.</p>
+</li>
+<li>
+<p>Do the same for <code>02_loop_optimizations/</code> while staring at
+   <code>-Rpass=loop-vectorize</code> and <code>-fopt-info-vec</code> output.</p>
+</li>
+<li>
+<p>Reproduce the LTO demo in <code>03_interprocedural/07_lto.c</code>. Convince
    yourself you understand why the un-LTO version has a call but the
-   LTO version doesn&rsquo;t.</li>
-<li>Re-derive the dominance frontier of the CFG in
+   LTO version doesn&rsquo;t.</p>
+</li>
+<li>
+<p>Re-derive the dominance frontier of the CFG in
    <code>04_data_flow_analysis/05_dominators.c</code> on paper. Compare with the
-   compiler&rsquo;s φ placement in the IR.</li>
-<li>Build the PGO demo in <code>10_advanced/01_pgo_demo.c</code>. Confirm with
-   <code>objdump -d</code> that the cold path moved to <code>.text.unlikely</code>.</li>
-<li>Read <a href="../11_gcc_specific/"><code>11_gcc_specific/</code></a> and
-   <a href="../12_llvm_specific/"><code>12_llvm_specific/</code></a> cover-to-cover.</li>
-<li>Apply the recipe in this chapter to <em>your</em> code base.</li>
+   compiler&rsquo;s φ placement in the IR.</p>
+</li>
+<li>
+<p>Build the PGO demo in <code>10_advanced/01_pgo_demo.c</code>. Confirm with
+   <code>objdump -d</code> that the cold path moved to <code>.text.unlikely</code>.</p>
+</li>
+<li>
+<p>Read <a href="../11_gcc_specific/"><code>11_gcc_specific/</code></a> and
+   <a href="../12_llvm_specific/"><code>12_llvm_specific/</code></a> cover-to-cover.</p>
+</li>
+<li>
+<p>Apply the recipe in this chapter to <em>your</em> code base.</p>
+</li>
 </ol>
 <h2 id="7-books-to-read-chronological-by-depth">7. Books to read (chronological, by depth)</h2>
 <ul>
 <li><strong>Cooper &amp; Torczon — <em>Engineering a Compiler</em></strong> — gentle and modern.</li>
-<li><strong>Muchnick — <em>Advanced Compiler Design &amp; Implementation</em></strong> — the
-  textbook every optimizer engineer keeps within reach.</li>
-<li><strong>Allen &amp; Kennedy — <em>Optimizing Compilers for Modern Architectures</em></strong>
-  — loops, dependence, vectorization. Still the reference.</li>
-<li><strong>Hennessy &amp; Patterson — <em>Computer Architecture: A Quantitative Approach</em></strong>
-  — for the hardware side the optimizer is targeting.</li>
-<li><strong>Aho, Lam, Sethi &amp; Ullman — <em>Compilers: Principles, Techniques &amp; Tools</em></strong>
-  — the dragon book; the historical foundation.</li>
+<li>
+<p><strong>Muchnick — <em>Advanced Compiler Design &amp; Implementation</em></strong> — the
+  textbook every optimizer engineer keeps within reach.</p>
+</li>
+<li>
+<p><strong>Allen &amp; Kennedy — <em>Optimizing Compilers for Modern Architectures</em></strong>
+  — loops, dependence, vectorization. Still the reference.</p>
+</li>
+<li>
+<p><strong>Hennessy &amp; Patterson — <em>Computer Architecture: A Quantitative Approach</em></strong>
+  — for the hardware side the optimizer is targeting.</p>
+</li>
+<li>
+<p><strong>Aho, Lam, Sethi &amp; Ullman — <em>Compilers: Principles, Techniques &amp; Tools</em></strong>
+  — the dragon book; the historical foundation.</p>
+</li>
 </ul>
 <h2 id="8-online-resources">8. Online resources</h2>
 <ul>
-<li>godbolt.org — Compiler Explorer (the most-used compiler interaction
-  tool on Earth).</li>
-<li>llvm.org/docs/Passes.html — current LLVM pass reference.</li>
+<li>
+<p>godbolt.org — Compiler Explorer (the most-used compiler interaction
+  tool on Earth).</p>
+</li>
+<li>
+<p>llvm.org/docs/Passes.html — current LLVM pass reference.</p>
+</li>
 <li>gcc.gnu.org/onlinedocs/gccint/ — GCC internals.</li>
 <li>Agner Fog&rsquo;s CPU manuals — for the hardware-side cost model.</li>
 <li>The LLVM Weekly newsletter (llvmweekly.org) — what is changing in LLVM
   right now.</li>
 </ul>
 <p>➡ End of guide. Go forth and <code>-O3</code>.</p>` },
-  { name: `89. Fundamentals / Examples / Pipeline Demo`, path: `00_fundamentals/examples/pipeline_demo.c`, dir: `00_fundamentals/examples`, body: `<h1 id="pipeline_democ">pipeline_demo.c</h1>
+  { name: `89. Fundamentals / Examples / Pipeline Demo`, path: `00_fundamentals/examples/pipeline_demo.c`, dir: `00_fundamentals/examples`, words: 98, mins: 1, body: `<h1 id="pipeline_democ">pipeline_demo.c</h1>
 <pre><code class="language-c">/* pipeline_demo.c
  *
  * Tiny program used as the running example for chapter 00.
@@ -12610,6 +13321,20 @@ function prettify(component) {
     return c.replace(/\b\w/g, l => l.toUpperCase());
 }
 
+// Like prettify(), but keeps any leading "01_"/"2-" style number as a "01. "
+// prefix so the sidebar mirrors the on-disk ordering of the documents.
+function prettifyKeepNum(component) {
+    const m = component.match(/^([0-9]+)[_-]/);
+    const prefix = m ? m[1] + '. ' : '';
+    return prefix + prettify(component);
+}
+
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => HTML_ESCAPES[c]); }
+function cleanName(name) { return (name || '').replace(/^\s*\d+\.\s*/, ''); }
+
+const CLOCK_ICON = '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8.75-4.25v3.94l2.4 2.4a.75.75 0 0 1-1.06 1.06l-2.62-2.62a.75.75 0 0 1-.22-.53V3.75a.75.75 0 0 1 1.5 0Z"></path></svg>';
+
 TAB_DATA.forEach((tab, idx) => {
     const opt = document.createElement('option');
     opt.value = String(idx);
@@ -12621,6 +13346,22 @@ TAB_DATA.forEach((tab, idx) => {
     panel.id = 'panel-' + idx;
     panel.dataset.dir = tab.dir || '';
     panel.innerHTML = tab.body;
+
+    // Breadcrumb + reading-time meta line (prepended, built once).
+    const meta = document.createElement('div');
+    meta.className = 'doc-meta';
+    const crumbs = cleanName(tab.name).split(' / ');
+    const crumbHtml = crumbs.map((c, i) =>
+        '<span class="crumb">' + escapeHtml(c) + '</span>' +
+        (i < crumbs.length - 1 ? '<span class="crumb-sep">/</span>' : '')
+    ).join('');
+    const words = (tab.words || 0).toLocaleString();
+    meta.innerHTML =
+        '<span class="doc-breadcrumb">' + crumbHtml + '</span>' +
+        '<span class="doc-reading-time">' + CLOCK_ICON +
+        (tab.mins || 1) + ' min read \u00b7 ' + words + ' words</span>';
+    panel.insertBefore(meta, panel.firstChild);
+
     tabPanels.appendChild(panel);
 });
 
@@ -12665,7 +13406,7 @@ function createTreeHtml(node, parentPath = '') {
         
         const label = document.createElement('span');
         label.className = 'dir-name';
-        label.textContent = prettify(dirName);
+        label.textContent = prettifyKeepNum(dirName);
         
         header.appendChild(chevron);
         header.appendChild(folder);
@@ -12690,10 +13431,10 @@ function createTreeHtml(node, parentPath = '') {
         const a = document.createElement('a');
         a.href = '#tab-' + idx;
         
-        // Use the basename or prettified name without numbers
+        // Use the basename, keeping any leading "NN_" document number prefix.
         const baseName = tab.path.split('/').pop() || tab.name;
         let displayName = baseName.replace(/\.[a-zA-Z0-9]+$/, '');
-        displayName = prettify(displayName);
+        displayName = prettifyKeepNum(displayName);
         
         a.textContent = displayName;
         a.title = tab.name;
@@ -12808,6 +13549,23 @@ docSelect.addEventListener('change', () => {
     activateTab(parseInt(docSelect.value, 10));
 });
 
+/* Previous / next document buttons in the navbar. */
+const docPrevBtn = document.getElementById('docPrev');
+const docNextBtn = document.getElementById('docNext');
+if (docPrevBtn) docPrevBtn.addEventListener('click', () => {
+    const i = currentTabIdx();
+    if (i > 0) { pushHistory(); activateTab(i - 1); }
+});
+if (docNextBtn) docNextBtn.addEventListener('click', () => {
+    const i = currentTabIdx();
+    if (i < TAB_DATA.length - 1) { pushHistory(); activateTab(i + 1); }
+});
+
+function updateDocNav(idx) {
+    if (docPrevBtn) docPrevBtn.disabled = (idx <= 0);
+    if (docNextBtn) docNextBtn.disabled = (idx >= TAB_DATA.length - 1);
+}
+
 /* ───── Syntax highlighting ───── */
 
 function addCopyButton(pre, block) {
@@ -12862,6 +13620,18 @@ function highlightAllCode() {
 
 highlightAllCode();
 
+/* ───── Wrap tables so they scroll horizontally on narrow screens ───── */
+function wrapTables() {
+    document.querySelectorAll('.tab-content table').forEach(table => {
+        if (table.parentElement && table.parentElement.classList.contains('table-scroll')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'table-scroll';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+    });
+}
+wrapTables();
+
 /* ───── Theme toggle ───── */
 
 const HLJS_DARK = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css';
@@ -12876,34 +13646,56 @@ function getStoredTheme() {
     try { return localStorage.getItem('doc-theme'); } catch(e) { return null; }
 }
 
-function setTheme(theme) {
+const darkMql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function osTheme() { return (darkMql && darkMql.matches) ? 'dark' : 'light'; }
+
+// Apply a theme. `persist` is true ONLY for an explicit user action; auto/OS
+// applications must NOT write to storage, otherwise the very first auto theme
+// would look like an explicit choice and we'd stop following the OS.
+function setTheme(theme, persist) {
     document.body.setAttribute('data-theme', theme);
     hljsLink.href = theme === 'light' ? HLJS_LIGHT : HLJS_DARK;
-    themeToggleBtn.innerHTML = theme === 'light' ? ICON_SUN : ICON_MOON;
+    themeToggleBtn.innerHTML = (theme === 'light' ? ICON_SUN : ICON_MOON);
     themeToggleBtn.title = theme === 'light'
         ? 'Switch to dark mode (Ctrl+Shift+L)'
         : 'Switch to light mode (Ctrl+Shift+L)';
-    try { localStorage.setItem('doc-theme', theme); } catch(e) {}
+    if (persist) {
+        try { localStorage.setItem('doc-theme', theme); } catch(e) {}
+    }
+}
+
+function toggleTheme() {
+    const current = document.body.getAttribute('data-theme') || 'dark';
+    setTheme(current === 'dark' ? 'light' : 'dark', true);
 }
 
 (function initTheme() {
     const stored = getStoredTheme();
-    const theme = (stored === 'light' || stored === 'dark')
-        ? stored
-        : (document.body.getAttribute('data-theme') || 'dark');
-    setTheme(theme);
+    if (stored === 'light' || stored === 'dark') {
+        setTheme(stored, false);              // explicit user choice wins
+    } else {
+        setTheme(osTheme(), false);           // otherwise follow the OS (live)
+    }
 })();
 
-themeToggleBtn.addEventListener('click', () => {
-    const current = document.body.getAttribute('data-theme') || 'dark';
-    setTheme(current === 'dark' ? 'light' : 'dark');
-});
+// Live-follow the OS appearance while the reader hasn't picked a theme manually.
+if (darkMql) {
+    const onOsChange = (e) => {
+        const stored = getStoredTheme();
+        if (stored !== 'light' && stored !== 'dark') {
+            setTheme(e.matches ? 'dark' : 'light', false);
+        }
+    };
+    if (darkMql.addEventListener) darkMql.addEventListener('change', onOsChange);
+    else if (darkMql.addListener) darkMql.addListener(onOsChange);  // older Safari
+}
+
+themeToggleBtn.addEventListener('click', toggleTheme);
 
 document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
         e.preventDefault();
-        const current = document.body.getAttribute('data-theme') || 'dark';
-        setTheme(current === 'dark' ? 'light' : 'dark');
+        toggleTheme();
     }
 });
 
@@ -12936,10 +13728,12 @@ function activateTab(idx, resetScroll) {
     }
     history.replaceState(null, null, '#tab-' + idx);
     if (typeof buildToc === 'function') buildToc(idx);
-    // Reflect the active document's title in the condensing navbar.
+    // Reflect the active document's title in the condensing navbar. Use the
+    // full name (including any leading number) so it matches the picker exactly.
     if (navDocTitle && TAB_DATA[idx]) {
-        navDocTitle.textContent = TAB_DATA[idx].name.replace(/^\s*\d+\.\s*/, '');
+        navDocTitle.textContent = TAB_DATA[idx].name;
     }
+    if (typeof updateDocNav === 'function') updateDocNav(idx);
     // Jump back to the top when switching documents so the reader starts at
     // the beginning rather than wherever the previous doc was scrolled to.
     if (resetScroll) {
@@ -12947,7 +13741,26 @@ function activateTab(idx, resetScroll) {
         document.body.classList.remove('nav-condensed');
         navLastY = 0;
     }
+    LS.set('doc-last-idx', String(idx));
 }
+
+/* ───── Lightweight state persistence (no per-scroll writes) ─────
+   Remembers the last document, sidebar/TOC open state and scroll position so
+   reopening the file resumes where you left off. Writes happen only on tab
+   switch, panel toggle and page hide -- never during scrolling. */
+const LS = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+function persistScroll() {
+    LS.set('doc-last-idx', String(currentTabIdx()));
+    LS.set('doc-last-y', String(Math.round(window.scrollY)));
+}
+window.addEventListener('pagehide', persistScroll);
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') persistScroll();
+});
 
 /* ───── Search index: pre-extract plain text per block ───── */
 
@@ -13145,6 +13958,7 @@ function runSearch() {
 
 function navigateToResult(result) {
     const savedQuery = searchInput.value.trim() || result.text.substring(0, 20);
+    pushHistory();
     closeSearch();
     activateTab(result.tabIdx, false);
 
@@ -13197,6 +14011,8 @@ function clearHighlights() {
 const sidebarNav = document.getElementById('sidebarNav');
 const navList = document.getElementById('navList');
 const sidebarToggle = document.getElementById('sidebarToggle');
+const readProgress = document.getElementById('readProgress');
+const toTopBtn = document.getElementById('toTop');
 let currentTocHeadings = [];
 
 function buildToc(panelIdx) {
@@ -13207,13 +14023,51 @@ function buildToc(panelIdx) {
     const headings = panel.querySelectorAll('h1, h2, h3, h4');
     headings.forEach((h, i) => {
         if (!h.id) h.id = 'autoid-' + panelIdx + '-' + i;
+        // Capture the clean heading text once (before any permalink anchor is
+        // added) so the TOC label never picks up the trailing '#'.
+        let title = h.getAttribute('data-title');
+        if (title === null) {
+            title = h.textContent;
+            h.setAttribute('data-title', title);
+            // Add a hover-revealed permalink anchor (built lazily, only for the
+            // doc currently being viewed).
+            const perma = document.createElement('a');
+            perma.className = 'heading-anchor';
+            perma.href = '#' + h.id;
+            perma.textContent = '#';
+            perma.setAttribute('aria-label', 'Copy link to this section');
+            perma.title = 'Copy link to this section';
+            const headingId = h.id;
+            perma.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Keep the doc-content click handler from also firing (it would
+                // re-run scroll/history logic and resolve duplicate ids).
+                e.stopPropagation();
+                const url = location.href.split('#')[0] + '#' + headingId;
+                const flash = function() {
+                    perma.classList.remove('copied');
+                    // Force reflow so the animation restarts on rapid clicks.
+                    void perma.offsetWidth;
+                    perma.classList.add('copied');
+                    setTimeout(function() { perma.classList.remove('copied'); }, 1400);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(flash).catch(function() { fallbackCopy(url, flash); });
+                } else {
+                    fallbackCopy(url, flash);
+                }
+                history.replaceState(null, '', '#' + headingId);
+                scrollToTarget(h);
+            });
+            h.appendChild(perma);
+        }
         const level = h.tagName.substring(1);
         const li = document.createElement('li');
         const a = document.createElement('a');
         a.href = '#' + h.id;
-        a.textContent = h.textContent;
+        a.textContent = title;
         a.className = 'nav-h' + level;
-        a.title = h.textContent;
+        a.title = title;
         a.dataset.headingId = h.id;
         a.addEventListener('click', function(e) {
             e.preventDefault();
@@ -13226,13 +14080,23 @@ function buildToc(panelIdx) {
     updateScrollSpy();
 }
 
+/* Single rAF-throttled scroll handler drives scroll-spy, the reading-progress
+   bar and the back-to-top button -- one listener doing all the work keeps
+   scrolling smooth (no extra runtime over the original two listeners). */
 let spyRaf = null;
 function updateScrollSpy() {
     if (spyRaf) return;
     spyRaf = requestAnimationFrame(() => {
         spyRaf = null;
-        if (currentTocHeadings.length === 0) return;
         const scrollY = window.scrollY;
+
+        // Reading progress + back-to-top (run regardless of TOC contents).
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = max > 0 ? Math.min(100, (scrollY / max) * 100) : 0;
+        if (readProgress) readProgress.style.width = pct + '%';
+        if (toTopBtn) toTopBtn.classList.toggle('show', scrollY > 480);
+
+        if (currentTocHeadings.length === 0) return;
         const offset = 80;
         let activeEntry = currentTocHeadings[0];
         for (const entry of currentTocHeadings) {
@@ -13244,18 +14108,14 @@ function updateScrollSpy() {
         }
         currentTocHeadings.forEach(e => e.link.classList.remove('nav-active'));
         if (activeEntry) {
+            // Only update the highlight. Do NOT programmatically scroll either
+            // sidebar -- they should stay put and move only when the user
+            // scrolls them. (The previous code scrolled the wrong sidebar, the
+            // left document list, which made it jump to the top on every click.)
             activeEntry.link.classList.add('nav-active');
-            const linkTop = activeEntry.link.offsetTop;
-            const navH = sidebarNav.clientHeight;
-            const navScroll = sidebarNav.scrollTop;
-            if (linkTop < navScroll + 40 || linkTop > navScroll + navH - 40) {
-                sidebarNav.scrollTo({ top: linkTop - navH / 3, behavior: 'smooth' });
-            }
         }
     });
 }
-
-window.addEventListener('scroll', updateScrollSpy, { passive: true });
 
 /* ───── iOS-style condensing navbar (hide on scroll down, show on scroll up) ───── */
 function updateNavCondense() {
@@ -13272,7 +14132,18 @@ function updateNavCondense() {
     }
     navLastY = y;
 }
-window.addEventListener('scroll', updateNavCondense, { passive: true });
+
+/* One scroll listener for everything (was two). */
+window.addEventListener('scroll', function () {
+    updateNavCondense();
+    updateScrollSpy();
+}, { passive: true });
+
+if (toTopBtn) {
+    toTopBtn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
 
 const tocSidebar = document.getElementById('tocSidebar');
 const tocToggle = document.getElementById('tocToggle');
@@ -13284,6 +14155,7 @@ function toggleSidebar() {
         tocSidebar.classList.add('collapsed');
         document.body.classList.add('toc-collapsed');
     }
+    LS.set('doc-sidebar', collapsed ? 'closed' : 'open');
 }
 
 function toggleToc() {
@@ -13293,6 +14165,7 @@ function toggleToc() {
         sidebarNav.classList.add('collapsed');
         document.body.classList.add('sidebar-collapsed');
     }
+    LS.set('doc-toc', collapsed ? 'closed' : 'open');
 }
 
 sidebarToggle.addEventListener('click', toggleSidebar);
@@ -13346,9 +14219,54 @@ function gotoAnchor(idx, anchor) {
     }
 }
 
+/* ───── Navigation history (browser-style back button) ─────
+   Whenever a link takes the reader to another section/document, remember where
+   they were (which tab + scroll position) so the navbar back button can return
+   them to exactly that spot. */
+const navBackBtn = document.getElementById('navBack');
+let navHistory = [];
+
+function currentTabIdx() {
+    const v = parseInt(docSelect.value, 10);
+    return isNaN(v) ? 0 : v;
+}
+
+function updateBackBtn() {
+    if (navBackBtn) navBackBtn.disabled = navHistory.length === 0;
+}
+
+function pushHistory() {
+    navHistory.push({ idx: currentTabIdx(), y: window.scrollY });
+    if (navHistory.length > 200) navHistory.shift();
+    updateBackBtn();
+}
+
+function navBack() {
+    const state = navHistory.pop();
+    if (!state) return;
+    activateTab(state.idx, false);
+    // Restore the exact scroll position after the panel becomes visible.
+    requestAnimationFrame(() => window.scrollTo({ top: state.y, behavior: 'auto' }));
+    updateBackBtn();
+}
+
+if (navBackBtn) navBackBtn.addEventListener('click', navBack);
+document.addEventListener('keydown', (e) => {
+    if (e.altKey && e.key === 'ArrowLeft' && !overlay.classList.contains('open')) {
+        e.preventDefault();
+        navBack();
+    }
+});
+
 document.addEventListener('click', function(e) {
     const link = e.target.closest('a[href]');
     if (!link) return;
+    // Only handle links that live inside document content. Links in the
+    // sidebars (TOC "on this page", document list) have their own handlers;
+    // letting this run for them would resolve duplicate heading ids against
+    // the wrong panel (every same-template doc shares the same ids).
+    const ownerPanel = link.closest('.tab-content');
+    if (!ownerPanel) return;
     const href = link.getAttribute('href');
     if (!href) return;
 
@@ -13356,10 +14274,10 @@ document.addEventListener('click', function(e) {
     if (href.charAt(0) === '#') {
         const id = href.substring(1);
         if (!id) return;
-        const ownerPanel = link.closest('.tab-content');
         const target = findById(id, ownerPanel);
         if (target) {
             e.preventDefault();
+            pushHistory();
             const dest = target.closest('.tab-content');
             if (dest) {
                 const m = dest.id.match(/^panel-(\d+)$/);
@@ -13374,12 +14292,26 @@ document.addEventListener('click', function(e) {
     const md = mdTarget(href, baseDirOf(link));
     if (md) {
         e.preventDefault();
+        pushHistory();
         gotoAnchor(md.idx, md.anchor);
     }
 });
 
 /* ───── Startup ───── */
 /* - Nagesh N Nazare - */
+
+// Restore persisted sidebar / TOC open state (only on desktop, where the
+// drawers don't overlay the content).
+if (window.innerWidth > 1024) {
+    if (LS.get('doc-sidebar') === 'open') {
+        sidebarNav.classList.remove('collapsed');
+        document.body.classList.remove('sidebar-collapsed');
+    }
+    if (LS.get('doc-toc') === 'open') {
+        tocSidebar.classList.remove('collapsed');
+        document.body.classList.remove('toc-collapsed');
+    }
+}
 
 const hash = location.hash || '';
 const tabMatch = hash.match(/^#tab-(\d+)$/);
@@ -13403,7 +14335,17 @@ if (tabMatch) {
         activateTab(0);
     }
 } else {
-    activateTab(0);
+    // No explicit target: resume the last-read document + scroll position.
+    const lastIdx = parseInt(LS.get('doc-last-idx'), 10);
+    const lastY = parseInt(LS.get('doc-last-y'), 10);
+    if (!isNaN(lastIdx) && lastIdx >= 0 && lastIdx < TAB_DATA.length) {
+        activateTab(lastIdx, false);
+        if (!isNaN(lastY) && lastY > 0) {
+            requestAnimationFrame(() => window.scrollTo({ top: lastY, behavior: 'auto' }));
+        }
+    } else {
+        activateTab(0);
+    }
 }
 </script>
 
